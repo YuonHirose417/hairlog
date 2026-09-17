@@ -327,6 +327,17 @@ export async function deleteVisit(id: string): Promise<void> {
   await db.runAsync('DELETE FROM visits WHERE id = ?;', [id]);
 }
 
+/**
+ * すべての記録を削除する。開発中のリセット用。
+ *
+ * photos 行は ON DELETE CASCADE で消えるが **ファイルの実体は残る**。
+ * 呼び出し側で lib/photos.ts の removeOrphanedPhotos() を続けて呼ぶこと。
+ */
+export async function deleteAllVisits(): Promise<void> {
+  const db = await initDatabase();
+  await db.runAsync('DELETE FROM visits;');
+}
+
 /** お気に入りを反転し、反転後の値を返す */
 export async function toggleFavorite(id: string): Promise<boolean> {
   const db = await initDatabase();

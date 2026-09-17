@@ -66,8 +66,14 @@ export default function RootLayout() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: c.background },
-          }}
-        />
+          }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="visit/[id]" />
+          {/* 見せるモードは写真だけを大きく出したいので全画面 */}
+          <Stack.Screen name="showcase/[id]" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="add/index" options={{ presentation: 'formSheet' }} />
+          <Stack.Screen name="settings/paywall" options={{ presentation: 'formSheet' }} />
+        </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

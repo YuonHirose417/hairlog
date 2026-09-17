@@ -5,6 +5,7 @@ export { Button, type ButtonProps, type ButtonVariant } from './button';
 export { Card, type CardProps } from './card';
 export { Divider, type DividerProps } from './divider';
 export { EmptyState, type EmptyStateProps } from './empty-state';
+export { Fab, type FabProps } from './fab';
 export { IconButton, type IconButtonProps } from './icon-button';
 export { MEMO_PLACEHOLDER, MemoField, type MemoFieldProps } from './memo-field';
 export { PhotoFrame, type PhotoFrameProps } from './photo-frame';
