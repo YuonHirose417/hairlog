@@ -71,7 +71,8 @@ export default function RootLayout() {
           <Stack.Screen name="visit/[id]" />
           {/* 見せるモードは写真だけを大きく出したいので全画面 */}
           <Stack.Screen name="showcase/[id]" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="add/index" options={{ presentation: 'formSheet' }} />
+          {/* 記録追加はメモ欄を広く取りたいので全画面。キーボードが出ても窮屈にしない */}
+          <Stack.Screen name="add/index" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="settings/paywall" options={{ presentation: 'formSheet' }} />
         </Stack>
       </SafeAreaProvider>

@@ -1,18 +1,26 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { Keyframe, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BLUR_HEADER_HEIGHT, BlurHeader, EmptyState, Fab, Text } from '@/components/ui';
 import { DEV_SKIP_PAYWALL } from '@/constants/dev';
-import { depth, FREE_VISIT_LIMIT, layout, screenPadding, spacing } from '@/constants/theme';
+import { depth, FREE_VISIT_LIMIT, layout, motion, screenPadding, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
 import { useTheme } from '@/hooks/use-theme';
 import { useVisits } from '@/hooks/use-visits';
-import { DevSeed } from '@/screens/home/dev-seed';
 import { HeroCard } from '@/screens/home/hero-card';
 import { VisitGridCell } from '@/screens/home/visit-grid-cell';
 import type { VisitSummary } from '@/types/models';
+
+/** 保存した記録がホームに現れるときの動き。scale(0) からは始めない */
+const heroEntrance = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.95 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }] },
+})
+  .duration(motion.duration.base)
+  .reduceMotion(ReduceMotion.System);
 
 export function Home() {
   const c = useTheme();
@@ -20,7 +28,7 @@ export function Home() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const { visits, count, loading, reload } = useVisits();
+  const { visits, count, loading } = useVisits();
   const { isPro } = useEntitlement();
 
   // ヘッダーはリストに重なっているので、その実測の高さだけ中身を下げる。
@@ -78,13 +86,18 @@ export function Home() {
         ]}
         ListHeaderComponent={
           <View>
-            {__DEV__ ? <DevSeed existingCount={count} onChanged={reload} /> : null}
             {__DEV__ && DEV_SKIP_PAYWALL ? (
               <Text variant="caption" color="danger" style={styles.devNotice}>
                 無料枠の判定をスキップ中（constants/dev.ts）
               </Text>
             ) : null}
-            {latest ? <HeroCard visit={latest} /> : null}
+            {latest ? (
+              // key を記録の id にして、新しく保存されたときだけ再生させる。
+              // ListHeaderComponent は仮想化リストの行ではないので entering を使ってよい
+              <Animated.View key={latest.id} entering={heroEntrance}>
+                <HeroCard visit={latest} />
+              </Animated.View>
+            ) : null}
             {/* グリッドが空のときは見出しだけが浮くので出さない */}
             {rest.length > 0 ? (
               <Text variant="caption" color="textMuted" style={styles.gridHeading}>

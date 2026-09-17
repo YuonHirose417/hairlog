@@ -34,6 +34,10 @@ function ensurePhotosDirectory(): Directory {
  * <Image source={{ uri: resolvePhotoUri(photo.uri) }} /> のように使う。
  */
 export function resolvePhotoUri(relativeUri: string): string {
+  // 既に絶対 URI（file:// / ph:// / content://）ならそのまま返す。
+  // 記録追加画面では、まだアプリ内へコピーしていない写真をプレビューするため
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(relativeUri)) return relativeUri;
+
   return new File(Paths.document, relativeUri).uri;
 }
 

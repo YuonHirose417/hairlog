@@ -1,5 +1,5 @@
-import { Stub } from '@/screens/stub';
+import { AddVisit } from '@/screens/add-visit';
 
 export default function AddVisitScreen() {
-  return <Stub title="記録追加" />;
+  return <AddVisit />;
 }
