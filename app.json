@@ -8,11 +8,18 @@
     "scheme": "hairlog",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yuonhirose.hairlog",
+      "infoPlist": {
+        "NSCameraUsageDescription": "髪型の写真を撮影するためにカメラを使用します。写真は端末内にのみ保存され、外部には送信されません。",
+        "NSPhotoLibraryUsageDescription": "過去の髪型の写真を記録に追加するために写真ライブラリを使用します。選んだ写真は端末内にのみ保存されます。",
+        "NSPhotoLibraryAddUsageDescription": "記録した髪型の写真をカメラロールに保存するために使用します。"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#121412",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -25,18 +32,45 @@
     },
     "plugins": [
       "expo-router",
+      "expo-sqlite",
+      "expo-sharing",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#F4F4F2",
+          "dark": {
+            "backgroundColor": "#121412"
+          },
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "過去の髪型の写真を記録に追加するために写真ライブラリを使用します。選んだ写真は端末内にのみ保存されます。",
+          "cameraPermission": "髪型の写真を撮影するためにカメラを使用します。写真は端末内にのみ保存され、外部には送信されません。"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "記録した髪型の写真をカメラロールに保存するために使用します。",
+          "savePhotosPermission": "記録した髪型の写真をカメラロールに保存するために使用します。",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#6E8B72"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "yuon"
   }
 }

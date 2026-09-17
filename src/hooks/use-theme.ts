@@ -1,14 +1,20 @@
+import { useColorScheme } from 'react-native';
+
+import { colors, type ColorScheme, type ThemeColors } from '@/constants/theme';
+
 /**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
+ * 端末のライト / ダーク設定に追従した色セットを返す。
+ *
+ * 画面側では `const c = useTheme()` として `c.text` のように使い、
+ * 生の hex を書かないこと。
  */
-
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export function useTheme() {
+export function useTheme(): ThemeColors {
   const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
+  return colors[scheme === 'dark' ? 'dark' : 'light'];
+}
 
-  return Colors[theme];
+/** 'light' | 'dark' が必要な場面（expo-blur の tint など）で使う */
+export function useThemeScheme(): ColorScheme {
+  const scheme = useColorScheme();
+  return scheme === 'dark' ? 'dark' : 'light';
 }

@@ -1,18 +1,74 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+// サブパスから読む。パッケージのルートを import すると使わない 300 / 900 まで
+// バンドルに含まれ、アプリのサイズが 11MB ほど増える
+import { ZenKakuGothicNew_400Regular } from '@expo-google-fonts/zen-kaku-gothic-new/400Regular';
+import { ZenKakuGothicNew_500Medium } from '@expo-google-fonts/zen-kaku-gothic-new/500Medium';
+import { ZenKakuGothicNew_700Bold } from '@expo-google-fonts/zen-kaku-gothic-new/700Bold';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { useTheme } from '@/hooks/use-theme';
+import { initDatabase } from '@/lib/db';
+import { initPurchases } from '@/lib/purchases';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
+  const c = useTheme();
+
+  const [fontsLoaded, fontError] = useFonts({
+    ZenKakuGothicNew_400Regular,
+    ZenKakuGothicNew_500Medium,
+    ZenKakuGothicNew_700Bold,
+  });
+
+  const [databaseReady, setDatabaseReady] = useState(false);
+  const [databaseError, setDatabaseError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    initDatabase()
+      .then(() => setDatabaseReady(true))
+      .catch((error: Error) => {
+        // DB が開けなくてもスプラッシュで固まらせない。画面側でエラーを出す
+        console.error('[hairlog] DB の初期化に失敗しました', error);
+        setDatabaseError(error);
+      });
+  }, []);
+
+  useEffect(() => {
+    // 課金は起動を止めない。キーが無い / Expo Go でも例外を投げず状態を返すだけ
+    initPurchases().then((result) => {
+      if (!result.available) {
+        console.log(`[hairlog] 課金は無効です: ${result.reason}`, result.detail ?? '');
+      }
+    });
+  }, []);
+
+  const ready = (fontsLoaded || Boolean(fontError)) && (databaseReady || Boolean(databaseError));
+
+  useEffect(() => {
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [ready]);
+
+  if (!ready) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: c.background },
+          }}
+        />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

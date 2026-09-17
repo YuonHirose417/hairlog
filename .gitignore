@@ -41,3 +41,11 @@ example
 # generated native folders
 /ios
 /android
+
+# local env files (RevenueCat keys etc.)
+.env
+.env.*
+!.env.example
+
+# EAS
+.easignore
