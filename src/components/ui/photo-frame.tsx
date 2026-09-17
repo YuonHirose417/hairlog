@@ -80,5 +80,12 @@ const styles = StyleSheet.create({
   frame: {
     width: '100%',
     overflow: 'hidden',
+    /**
+     * maxHeight で高さが頭打ちになると、Yoga は aspectRatio を保つために
+     * 幅を再計算して縮める。そのままだと縮んだ枠が親の中で左寄せになり、
+     * 右側だけに余白ができてしまうため中央に寄せる。
+     * 幅が頭打ちにならない場所（グリッドのセルなど）では no-op。
+     */
+    alignSelf: 'center',
   },
 });

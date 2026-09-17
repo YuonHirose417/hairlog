@@ -82,14 +82,21 @@ export function HeroCard({ visit }: HeroCardProps) {
         onLongPress={handleLongPress}
         delayLongPress={400}
         style={({ pressed }) => pressed && styles.pressed}>
-        <PhotoFrame
-          uri={visit.coverUri}
-          // 角丸はカード側が持つ。写真自体には付けない
-          shape="none"
-          aspectRatio={layout.photoAspectRatio}
-          maxHeight={photoMaxHeight}
-          accessibilityLabel="最新の髪型"
-        />
+        {/*
+          maxHeight で枠の幅が縮むことがあるため、その左右に残る余白は
+          カードの surface（白）ではなく写真の下地色で埋める。
+          photoBackground は無彩色寄りなので、髪色の見え方には影響しない。
+        */}
+        <View style={[styles.photoArea, { backgroundColor: c.photoBackground }]}>
+          <PhotoFrame
+            uri={visit.coverUri}
+            // 角丸はカード側が持つ。写真自体には付けない
+            shape="none"
+            aspectRatio={layout.photoAspectRatio}
+            maxHeight={photoMaxHeight}
+            accessibilityLabel="最新の髪型"
+          />
+        </View>
       </Pressable>
 
       <View style={styles.body}>
@@ -133,6 +140,10 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.9,
+  },
+  photoArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   body: {
     padding: spacing.md,
