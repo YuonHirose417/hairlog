@@ -1,16 +1,15 @@
 /**
  * デザイントークンの唯一の定義場所。
  *
- * 画面やコンポーネントに生の hex / 数値リテラルを書かないこと。
+ * 画面やコンポーネントに生の hex / rgba / 数値リテラルを書かないこと。
  * 色は useTheme()（src/hooks/use-theme.ts）から取り、それ以外はここから直接 import する。
  *
- * 方針「Soft Charcoal」
- * - 落ち着いたグレージュ基調。アクセントはセージグリーン
- * - アクセント色は ♡・主要ボタン・選択状態にだけ使う。写真の周囲には一切使わない
- * - 写真を最優先で大きく見せ、文字やボタンは控えめにする
+ * 方針「Sunny Solid」
+ * - イエロー × ネイビーの2色。太い輪郭と下方向のソリッドな影で「ぷっくり」させる
+ * - **写真の上・周囲には色も輪郭も影も乗せない**（髪色が正確に見えなくなるため）
+ * - 輪郭と影を使ってよいのは ボタン / カードの枠 / バッジ / ＋ボタン だけ
+ * - 黄色の上に置く文字・記号は必ず ink。白にしない
  */
-
-import { Platform } from 'react-native';
 
 // -----------------------------------------------------------------------------
 // 色
@@ -19,51 +18,68 @@ import { Platform } from 'react-native';
 /**
  * ライト / ダークで同じキーを持つ。片方にしかないキーを作らないこと
  * （useTheme() の戻り値の型が割れる）。
+ *
+ * 12px の文字に使う色は、背景に対してコントラスト比 4.5:1 以上を確保してある。
  */
 export const colors = {
   light: {
-    /** 画面の地 */
-    background: '#F4F4F2',
+    /** 画面の地。わずかに温かい白 */
+    background: '#FFFBF0',
     /** カード・シートなど一段持ち上がった面 */
     surface: '#FFFFFF',
     /** 入力欄など、地よりわずかに沈んだ面 */
-    surfaceSunken: '#EAEAE7',
-    /** 本文 */
-    text: '#1F2220',
-    /** 補助テキスト（日付・美容院名・担当者名など） */
-    textMuted: '#7C817D',
-    /** さらに弱い注釈・プレースホルダー */
-    textFaint: '#A4A8A4',
-    /** 区切り線・枠線 */
-    border: '#DEDEDA',
-    /** ♡・主要ボタン・選択状態にだけ使う */
-    accent: '#6E8B72',
-    /** accent の上に載せる文字 */
-    onAccent: '#FFFFFF',
-    /** accent の淡い面（選択状態の背景など） */
-    accentSubtle: '#E4EBE5',
+    surfaceSunken: '#F4F1E6',
+    /** 本文。黒ではなくネイビー */
+    text: '#1B2430',
+    /** 補助テキスト。日付・美容院名など「読ませたい12px」はこれを使う（5.66:1） */
+    textMuted: '#5A6675',
+    /** 最も弱い注釈・プレースホルダー（4.56:1） */
+    textFaint: '#6B7482',
+    /** ボタン・バッジ・＋ の太い輪郭 */
+    outline: '#1B2430',
+    /** カードなど、主張させたくない枠 */
+    outlineSubtle: '#E2DECF',
+    /** 背面に敷く影の面の色 */
+    solidShadow: '#1B2430',
+    /** 主要操作（＋・見せる・保存） */
+    accent: '#FFC72E',
+    /** accent の上に置く文字・記号。**白にしない** */
+    onAccent: '#1B2430',
+    /** ♡・選択状態 */
+    accentSecondary: '#2B4C7E',
+    /** accentSecondary の淡い面 */
+    accentSubtle: '#E7EDF6',
     /** 削除など、取り消せない操作 */
-    danger: '#B4564B',
+    danger: '#E0524A',
     /** 写真を置く下地。読み込み中もここが見える */
-    photoBackground: '#E4E4E0',
+    photoBackground: '#EDEAE0',
     /** モーダルの背後を覆う色 */
-    scrim: 'rgba(18, 20, 18, 0.32)',
+    scrim: 'rgba(27, 36, 48, 0.32)',
     /** expo-blur の tint */
     blurTint: 'light',
   },
   dark: {
-    background: '#121412',
-    surface: '#1D201E',
-    surfaceSunken: '#262A27',
-    text: '#EDEFEC',
-    textMuted: '#9AA09B',
-    textFaint: '#6E746F',
-    border: '#2F332F',
-    accent: '#8FB094',
-    onAccent: '#11150F',
-    accentSubtle: '#232D24',
-    danger: '#D2796D',
-    photoBackground: '#262A26',
+    background: '#141821',
+    surface: '#1F2530',
+    surfaceSunken: '#29313E',
+    text: '#F4F5F7',
+    textMuted: '#A3ADBC',
+    /** 4.84:1。ダークでも 12px が読める明るさ */
+    textFaint: '#7C8695',
+    /** 暗い地にネイビーを引くと消えるため、輪郭は明色に反転する */
+    outline: '#E4E7EE',
+    outlineSubtle: '#39414F',
+    /** 明るい面から黒へ落ちるので、暗い地でも影が読める */
+    solidShadow: '#000000',
+    /** イエローはダークでも黄色のまま残す */
+    accent: '#FFD75E',
+    /** ダークでも ink。白にすると眩しく読みにくい */
+    onAccent: '#1B2430',
+    /** ネイビーは暗い地で沈むのでスカイに置換 */
+    accentSecondary: '#7FB3E8',
+    accentSubtle: '#22303F',
+    danger: '#FF7A6E',
+    photoBackground: '#2A2F38',
     scrim: 'rgba(0, 0, 0, 0.5)',
     blurTint: 'dark',
   },
@@ -88,6 +104,18 @@ export const showcase = {
   brightness: 1,
 } as const;
 
+/**
+ * 枚数バッジ（シール風）の固定色。showcase と同じくテーマで切り替えない。
+ *
+ * バッジは**写真の上に乗る唯一の要素**なので、イエローもネイビーのアクセントも
+ * 使わない。白フチ + 暗い無彩色だけにして、写真の色に干渉させない。
+ */
+export const sticker = {
+  border: '#FFFFFF',
+  background: '#1B2430',
+  text: '#FFFFFF',
+} as const;
+
 // -----------------------------------------------------------------------------
 // 余白
 // -----------------------------------------------------------------------------
@@ -105,20 +133,35 @@ export const spacing = {
 export const screenPadding = spacing.md;
 
 // -----------------------------------------------------------------------------
-// 角丸
+// 角丸・輪郭・影の深さ
 // -----------------------------------------------------------------------------
 
 export const radius = {
-  /** ホームのグリッドサムネイル。小さめにして写真を大きく見せる */
-  thumb: 10,
+  /** ホームのグリッドサムネイル */
+  thumb: 14,
   /** 入力欄・小さめのボタン */
-  control: 12,
+  control: 14,
   /** カード・大きな写真 */
-  card: 20,
+  card: 24,
   /** モーダル / ボトムシート */
   sheet: 28,
   /** 丸ボタン・ピル */
   pill: 999,
+} as const;
+
+export const border = {
+  hairline: 1,
+  /** 「ぷっくり」を出す太い輪郭 */
+  bold: 2,
+} as const;
+
+/**
+ * 背面に敷く影の面を、下へずらす量（px）。
+ * RN の shadow* プロパティは使わない（Android で elevation に落ちて見た目が割れるため）。
+ */
+export const depth = {
+  solid: 4,
+  small: 2,
 } as const;
 
 // -----------------------------------------------------------------------------
@@ -137,12 +180,12 @@ export const fontSize = {
 } as const;
 
 export const fontFamily = {
-  regular: 'ZenKakuGothicNew_400Regular',
-  medium: 'ZenKakuGothicNew_500Medium',
-  bold: 'ZenKakuGothicNew_700Bold',
+  regular: 'MPLUSRounded1c_400Regular',
+  medium: 'MPLUSRounded1c_500Medium',
+  bold: 'MPLUSRounded1c_700Bold',
 } as const;
 
-/** 和文は行間を広めに取ったほうが読みやすい */
+/** 丸ゴシックは行間を広めに取ったほうが読みやすい */
 export const lineHeight = {
   caption: 18,
   body: 22,
@@ -191,48 +234,19 @@ export const typography = {
 export type TypographyVariant = keyof typeof typography;
 
 // -----------------------------------------------------------------------------
-// 影
-// -----------------------------------------------------------------------------
-
-/**
- * 柔らかく広い影。**アクセント色は混ぜない**（写真の周囲に色を乗せないため）。
- * Android は elevation のみ効く。
- */
-export const shadow = {
-  soft: Platform.select({
-    ios: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.06,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
-    },
-    default: { elevation: 2 },
-  }),
-  lifted: Platform.select({
-    ios: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.1,
-      shadowRadius: 24,
-      shadowOffset: { width: 0, height: 10 },
-    },
-    default: { elevation: 6 },
-  }),
-} as const;
-
-// -----------------------------------------------------------------------------
 // モーション
 // -----------------------------------------------------------------------------
 
 export const motion = {
   duration: {
-    fast: 150,
-    base: 250,
-    slow: 400,
+    fast: 120,
+    base: 220,
+    slow: 380,
   },
   /** 保存完了など、気持ちよく弾ませたいとき */
   spring: {
-    damping: 18,
-    stiffness: 180,
+    damping: 12,
+    stiffness: 260,
     mass: 1,
   },
   /** 写真の拡大・縮小など、跳ねてほしくないとき */
@@ -254,6 +268,11 @@ export const layout = {
   gridGap: spacing.xs,
   /** 写真の標準アスペクト比（縦長）。髪型は縦位置で撮ることが多い */
   photoAspectRatio: 3 / 4,
+  /**
+   * 最新カードの写真の高さの上限（画面高に対する比）。
+   * これを超えると、日付・美容院名・「美容師さんに見せる」が画面外に出てしまう。
+   */
+  heroMaxHeightRatio: 0.44,
   /** タップ領域の最小サイズ */
   minTouchTarget: 44,
   /** blur ヘッダーの高さ（セーフエリアを除く） */

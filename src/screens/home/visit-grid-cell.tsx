@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { PhotoFrame, Text } from '@/components/ui';
-import { radius, spacing } from '@/constants/theme';
+import { border, radius, spacing, sticker } from '@/constants/theme';
 import { formatShortDate } from '@/lib/format';
 import type { VisitSummary } from '@/types/models';
 
@@ -41,7 +41,7 @@ export function VisitGridCell({ visit, width }: VisitGridCellProps) {
         ) : null}
       </PhotoFrame>
 
-      <Text variant="caption" color="textFaint" numberOfLines={1} style={styles.date}>
+      <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.date}>
         {formatShortDate(visit.visitedAt)}
       </Text>
     </Pressable>
@@ -54,17 +54,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.xs,
     right: spacing.xs,
-    minWidth: 20,
-    paddingHorizontal: 6,
+    minWidth: 22,
+    paddingHorizontal: spacing.xs + 2,
     paddingVertical: 1,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    // テーマに依らず写真の上で読めるよう、無彩色の半透明を直接指定する
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    // シール風。写真の上に乗る唯一の要素なので、アクセント色は使わず
+    // 白フチ + 暗い無彩色だけにして写真の色に干渉させない
+    backgroundColor: sticker.background,
+    borderWidth: border.bold,
+    borderColor: sticker.border,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: sticker.text,
   },
   date: {
     marginTop: spacing.xs,

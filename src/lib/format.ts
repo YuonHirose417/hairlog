@@ -13,11 +13,20 @@ export function formatDate(iso: string): string {
   return `${year}.${month}.${day}`;
 }
 
-/** `3.14` — グリッドのセルなど、幅が狭い場所 */
-export function formatShortDate(iso: string): string {
+/**
+ * グリッドのセルなど、幅が狭い場所の日付。
+ *
+ * 今年なら年を省いて `8.27`、今年以外は `2025.8.27` と出す。
+ * 直近の記録では年が邪魔になり、古い記録では年が無いと分からないため。
+ */
+export function formatShortDate(iso: string, now: Date = new Date()): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return `${date.getMonth() + 1}.${date.getDate()}`;
+
+  const monthDay = `${date.getMonth() + 1}.${date.getDate()}`;
+  return date.getFullYear() === now.getFullYear()
+    ? monthDay
+    : `${date.getFullYear()}.${monthDay}`;
 }
 
 /**

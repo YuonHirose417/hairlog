@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
-    "@expo-google-fonts/zen-kaku-gothic-new": "^0.4.1",
+    "@expo-google-fonts/m-plus-rounded-1c": "^0.4.4",
     "@expo/ui": "~57.0.18",
     "expo": "~57.0.23",
     "expo-blur": "~57.0.3",

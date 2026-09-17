@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/ui/text';
-import { radius, spacing } from '@/constants/theme';
+import { border, radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type SuggestionRowProps = {
@@ -45,10 +45,12 @@ export function SuggestionRow({ items, selected, onSelect }: SuggestionRowProps)
               styles.chip,
               {
                 backgroundColor: isSelected ? c.accentSubtle : c.surfaceSunken,
+                borderWidth: border.bold,
+                borderColor: isSelected ? c.accentSecondary : c.outlineSubtle,
               },
               pressed && styles.pressed,
             ]}>
-            <Text variant="caption" color={isSelected ? 'accent' : 'textMuted'} numberOfLines={1}>
+            <Text variant="caption" color={isSelected ? 'accentSecondary' : 'textMuted'} numberOfLines={1}>
               {item}
             </Text>
           </Pressable>

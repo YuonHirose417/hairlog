@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { Text } from '@/components/ui/text';
-import { layout, radius, spacing, typography } from '@/constants/theme';
+import { border, layout, radius, spacing, typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextFieldProps = Omit<TextInputProps, 'style'> & {
@@ -36,10 +36,12 @@ export function TextField({ label, subtle = true, ...rest }: TextFieldProps) {
           typography.caption,
           { color: c.text },
           subtle
-            ? { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }
+            ? { borderBottomWidth: border.bold, borderBottomColor: c.outlineSubtle }
             : {
                 backgroundColor: c.surfaceSunken,
                 borderRadius: radius.control,
+                borderWidth: border.bold,
+                borderColor: c.outlineSubtle,
                 paddingHorizontal: spacing.sm + spacing.xs,
                 minHeight: layout.minTouchTarget,
               },

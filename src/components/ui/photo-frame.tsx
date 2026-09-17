@@ -16,6 +16,8 @@ export type PhotoFrameProps = {
   contentFit?: ImageContentFit;
   /** 縦横比。既定は theme.layout.photoAspectRatio（3:4） */
   aspectRatio?: number;
+  /** 高さの上限。縦長の写真が画面を占領しないように使う */
+  maxHeight?: number;
   /** 写真の上に重ねる要素（♡ や枚数バッジなど） */
   children?: React.ReactNode;
   accessibilityLabel?: string;
@@ -25,14 +27,18 @@ export type PhotoFrameProps = {
 /**
  * 写真の表示はすべてこのコンポーネントを通す。
  *
- * **アクセント色を一切使わない。** 枠線・影・オーバーレイに色を乗せると
- * 写真の色が濁るため、下地は無彩色の photoBackground のみ。
+ * **輪郭線も影もアクセント色も一切付けない。** 他の面は SolidSurface で
+ * 太い輪郭とソリッド影を持つが、写真だけは例外。枠や影や色を乗せると
+ * 髪色が正確に見えなくなり、美容師さんに見せるという目的が損なわれる。
+ *
+ * 下地は無彩色寄りの photoBackground のみ。
  */
 export function PhotoFrame({
   uri,
   shape = 'card',
   contentFit = 'cover',
   aspectRatio = layout.photoAspectRatio,
+  maxHeight,
   children,
   accessibilityLabel,
   style,
@@ -51,6 +57,7 @@ export function PhotoFrame({
       style={[
         styles.frame,
         { aspectRatio, borderRadius, backgroundColor: c.photoBackground },
+        maxHeight === undefined ? null : { maxHeight },
         style,
       ]}>
       {uri ? (

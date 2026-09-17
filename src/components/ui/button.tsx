@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,8 +10,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { SolidSurface } from '@/components/ui/solid-surface';
 import { Text } from '@/components/ui/text';
-import { layout, radius, spacing } from '@/constants/theme';
+import { border, layout, radius, spacing, type ColorName } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -18,17 +20,37 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonProps = {
   label: string;
   onPress?: (event: GestureResponderEvent) => void;
-  /** primary のみアクセント色を使う。写真の近くでは secondary / ghost を選ぶ */
+  /** primary / secondary は輪郭とソリッド影がつく。ghost / danger は素の文字だけ */
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
   /** 親の幅いっぱいに広げる */
   fullWidth?: boolean;
+  /**
+   * 押したときに面を沈ませる。
+   * **「美容師さんに見せる」など主要なボタンだけに使うこと。**
+   */
+  sink?: boolean;
   /** 押下時の触覚フィードバックを止めたいとき */
   haptic?: boolean;
   style?: StyleProp<ViewStyle>;
   /** ラベルの左に置くアイコンなど */
   leading?: React.ReactNode;
+};
+
+type Appearance = {
+  background: ColorName;
+  outline: ColorName;
+  label: ColorName;
+  solid: boolean;
+};
+
+const APPEARANCE: Record<ButtonVariant, Appearance> = {
+  // 黄色の上の文字は必ず ink。白にしない
+  primary: { background: 'accent', outline: 'outline', label: 'onAccent', solid: true },
+  secondary: { background: 'surface', outline: 'outline', label: 'text', solid: true },
+  ghost: { background: 'surface', outline: 'outlineSubtle', label: 'textMuted', solid: false },
+  danger: { background: 'surface', outline: 'outlineSubtle', label: 'danger', solid: false },
 };
 
 export function Button({
@@ -38,26 +60,15 @@ export function Button({
   disabled = false,
   loading = false,
   fullWidth = false,
+  sink = false,
   haptic = true,
   style,
   leading,
 }: ButtonProps) {
   const c = useTheme();
+  const [pressed, setPressed] = useState(false);
   const isInactive = disabled || loading;
-
-  const background = {
-    primary: c.accent,
-    secondary: c.surfaceSunken,
-    ghost: 'transparent',
-    danger: 'transparent',
-  }[variant];
-
-  const labelColor = {
-    primary: 'onAccent',
-    secondary: 'text',
-    ghost: 'textMuted',
-    danger: 'danger',
-  }[variant] as 'onAccent' | 'text' | 'textMuted' | 'danger';
+  const look = APPEARANCE[variant];
 
   function handlePress(event: GestureResponderEvent) {
     if (isInactive) return;
@@ -68,46 +79,62 @@ export function Button({
     onPress?.(event);
   }
 
+  const content = loading ? (
+    <ActivityIndicator color={variant === 'primary' ? c.onAccent : c.textMuted} />
+  ) : (
+    <View style={styles.content}>
+      {leading}
+      <Text variant="subhead" color={look.label}>
+        {label}
+      </Text>
+    </View>
+  );
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.base,
-        { backgroundColor: background },
-        variant === 'ghost' || variant === 'danger' ? styles.bare : null,
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
         fullWidth && styles.fullWidth,
-        pressed && styles.pressed,
         isInactive && styles.inactive,
+        !look.solid && pressed && styles.barePressed,
         style,
       ]}>
-      {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? c.onAccent : c.textMuted} />
+      {look.solid ? (
+        <SolidSurface
+          background={look.background}
+          outline={look.outline}
+          borderRadius={radius.pill}
+          sink={sink}
+          pressed={pressed}
+          contentStyle={styles.face}>
+          {content}
+        </SolidSurface>
       ) : (
-        <View style={styles.content}>
-          {leading}
-          <Text variant="subhead" color={labelColor}>
-            {label}
-          </Text>
-        </View>
+        <View style={styles.bare}>{content}</View>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
+  face: {
     minHeight: layout.minTouchTarget,
-    paddingHorizontal: spacing.lg,
+    // 輪郭が太いぶん、内側の余白を広げて窮屈に見えないようにする
+    paddingHorizontal: spacing.lg + border.bold,
     paddingVertical: spacing.sm + spacing.xs,
-    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bare: {
+    minHeight: layout.minTouchTarget,
     paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flexDirection: 'row',
@@ -117,8 +144,8 @@ const styles = StyleSheet.create({
   fullWidth: {
     alignSelf: 'stretch',
   },
-  pressed: {
-    opacity: 0.7,
+  barePressed: {
+    opacity: 0.6,
   },
   inactive: {
     opacity: 0.4,

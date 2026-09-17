@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
-import { colors, layout, spacing } from '@/constants/theme';
+import { border, colors, layout, spacing } from '@/constants/theme';
 import { useTheme, useThemeScheme } from '@/hooks/use-theme';
 
 export type BlurHeaderProps = {
@@ -14,9 +14,15 @@ export type BlurHeaderProps = {
   right?: React.ReactNode;
 };
 
+/** セーフエリアを除いた、ヘッダーの見た目の高さ */
+export const BLUR_HEADER_HEIGHT = layout.headerHeight;
+
 /**
- * 写真の上に重なる半透明のヘッダー。
- * 写真を隠さないよう、背景は blur と薄い下地だけにしてある。
+ * リストの上に重ねる半透明のヘッダー。
+ *
+ * **絶対配置で中身に重ねる。** 縦に積むと blur の意味がなく、写真が透けない。
+ * 使う側は、リストの contentContainerStyle に
+ * `insets.top + BLUR_HEADER_HEIGHT` ぶんの paddingTop を足すこと。
  */
 export function BlurHeader({ title, left, right }: BlurHeaderProps) {
   const c = useTheme();
@@ -27,7 +33,10 @@ export function BlurHeader({ title, left, right }: BlurHeaderProps) {
     <BlurView
       intensity={40}
       tint={colors[scheme].blurTint}
-      style={[styles.container, { paddingTop: insets.top, borderBottomColor: c.border }]}>
+      style={[
+        styles.container,
+        { paddingTop: insets.top, borderBottomColor: c.outlineSubtle },
+      ]}>
       <View style={styles.bar}>
         <View style={styles.side}>{left}</View>
 
@@ -47,10 +56,15 @@ export function BlurHeader({ title, left, right }: BlurHeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    borderBottomWidth: border.hairline,
   },
   bar: {
-    height: layout.headerHeight,
+    height: BLUR_HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,

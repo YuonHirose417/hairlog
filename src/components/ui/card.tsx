@@ -1,38 +1,47 @@
-import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { radius, shadow, spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { SolidSurface } from '@/components/ui/solid-surface';
+import { border, depth, radius, spacing } from '@/constants/theme';
 
-export type CardProps = ViewProps & {
+export type CardProps = {
+  children: React.ReactNode;
   /** 内側の余白を消す。写真をカードいっぱいに敷くときに使う */
   flush?: boolean;
-  /** 影を消して枠線だけにする */
+  /** 輪郭を細く弱くし、影も浅くする。情報を並べるだけの箱に使う */
   flat?: boolean;
+  /** カードの外側（位置・余白）。影の面を含めた全体にかかる */
   style?: StyleProp<ViewStyle>;
+  /** カードの中身の並べ方（gap など） */
+  contentStyle?: StyleProp<ViewStyle>;
 };
 
-export function Card({ flush = false, flat = false, style, ...rest }: CardProps) {
-  const c = useTheme();
-
+/**
+ * 情報をまとめる箱。輪郭とソリッド影を持つ。
+ *
+ * カードは押せないので沈む動きは付けない（sink は使わない）。
+ */
+export function Card({
+  children,
+  flush = false,
+  flat = false,
+  style,
+  contentStyle,
+}: CardProps) {
   return (
-    <View
-      style={[
-        styles.base,
-        { backgroundColor: c.surface },
-        flush ? styles.flush : styles.padded,
-        flat ? { borderWidth: StyleSheet.hairlineWidth, borderColor: c.border } : shadow.soft,
-        style,
-      ]}
-      {...rest}
-    />
+    <SolidSurface
+      background="surface"
+      outline={flat ? 'outlineSubtle' : 'outline'}
+      borderWidth={flat ? border.hairline : border.bold}
+      borderRadius={radius.card}
+      depth={flat ? depth.small : depth.solid}
+      style={style}
+      contentStyle={flush ? styles.flush : styles.padded}>
+      <View style={contentStyle}>{children}</View>
+    </SolidSurface>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  padded: { padding: spacing.md },
-  flush: { padding: 0 },
+  padded: { padding: spacing.md, overflow: 'hidden' },
+  flush: { padding: 0, overflow: 'hidden' },
 });

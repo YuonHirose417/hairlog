@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
 import { Pressable, StyleSheet, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SolidSurface } from '@/components/ui/solid-surface';
 import { Text } from '@/components/ui/text';
-import { radius, shadow, spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { radius, spacing } from '@/constants/theme';
 
 export type FabProps = {
   onPress: (event: GestureResponderEvent) => void;
@@ -19,12 +20,12 @@ const SIZE = 60;
 /**
  * 右下に浮かぶ主要操作ボタン。
  *
- * 写真の上に重なるため、アクセント色の不透明な下地を敷いて写真と分離する。
- * アクセント色を使ってよい数少ない箇所のひとつ（♡・主要ボタン・選択状態）。
+ * 太い輪郭とソリッド影を持ち、押すと面だけが沈む。
+ * 記号は onAccent（ink）。イエローの上に白を置かない。
  */
 export function Fab({ onPress, accessibilityLabel, symbol = '＋', disabled = false }: FabProps) {
-  const c = useTheme();
   const insets = useSafeAreaInsets();
+  const [pressed, setPressed] = useState(false);
 
   function handlePress(event: GestureResponderEvent) {
     if (disabled) return;
@@ -39,33 +40,36 @@ export function Fab({ onPress, accessibilityLabel, symbol = '＋', disabled = fa
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.base,
-        shadow.lifted,
-        {
-          backgroundColor: c.accent,
-          bottom: insets.bottom + spacing.lg,
-          right: spacing.md,
-        },
-        pressed && styles.pressed,
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
+        styles.position,
+        { bottom: insets.bottom + spacing.lg, right: spacing.md },
         disabled && styles.disabled,
       ]}>
-      <Text variant="title" color="onAccent">
-        {symbol}
-      </Text>
+      <SolidSurface
+        background="accent"
+        borderRadius={radius.pill}
+        sink
+        pressed={pressed}
+        contentStyle={styles.face}>
+        <Text variant="title" color="onAccent">
+          {symbol}
+        </Text>
+      </SolidSurface>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
+  position: {
     position: 'absolute',
+  },
+  face: {
     width: SIZE,
     height: SIZE,
-    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
   disabled: { opacity: 0.4 },
 });

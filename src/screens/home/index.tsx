@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BlurHeader, EmptyState, Fab, Text } from '@/components/ui';
+import { BLUR_HEADER_HEIGHT, BlurHeader, EmptyState, Fab, Text } from '@/components/ui';
 import { DEV_SKIP_PAYWALL } from '@/constants/dev';
 import { FREE_VISIT_LIMIT, layout, screenPadding, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
@@ -59,7 +59,11 @@ export function Home() {
         columnWrapperStyle={styles.column}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + spacing.xxl * 2 },
+          {
+            // ヘッダーはリストに重なっているので、その分だけ内容を下げる
+            paddingTop: insets.top + BLUR_HEADER_HEIGHT + spacing.lg,
+            paddingBottom: insets.bottom + spacing.xxl * 2,
+          },
         ]}
         ListHeaderComponent={
           <View>
@@ -70,6 +74,12 @@ export function Home() {
               </Text>
             ) : null}
             {latest ? <HeroCard visit={latest} /> : null}
+            {/* グリッドが空のときは見出しだけが浮くので出さない */}
+            {rest.length > 0 ? (
+              <Text variant="caption" color="textMuted" style={styles.gridHeading}>
+                これまでの髪型
+              </Text>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -99,7 +109,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: screenPadding,
-    paddingTop: spacing.lg,
   },
   column: {
     gap: layout.gridGap,
@@ -110,5 +119,8 @@ const styles = StyleSheet.create({
   },
   empty: {
     minHeight: 420,
+  },
+  gridHeading: {
+    marginBottom: spacing.sm,
   },
 });

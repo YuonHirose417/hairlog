@@ -14,7 +14,7 @@ export function Divider({ spaced = false, style }: DividerProps) {
 
   return (
     <View
-      style={[styles.line, { backgroundColor: c.border }, spaced && styles.spaced, style]}
+      style={[styles.line, { backgroundColor: c.outlineSubtle }, spaced && styles.spaced, style]}
     />
   );
 }

@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
-import { spacing } from '@/constants/theme';
+import { showcase, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type StubProps = {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   onDark: {
-    color: '#FFFFFF',
+    color: showcase.text,
   },
   close: {
     marginTop: spacing.xl,

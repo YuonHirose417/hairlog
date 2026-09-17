@@ -1,8 +1,8 @@
-// サブパスから読む。パッケージのルートを import すると使わない 300 / 900 まで
-// バンドルに含まれ、アプリのサイズが 11MB ほど増える
-import { ZenKakuGothicNew_400Regular } from '@expo-google-fonts/zen-kaku-gothic-new/400Regular';
-import { ZenKakuGothicNew_500Medium } from '@expo-google-fonts/zen-kaku-gothic-new/500Medium';
-import { ZenKakuGothicNew_700Bold } from '@expo-google-fonts/zen-kaku-gothic-new/700Bold';
+// サブパスから読む。パッケージのルートを import すると使わないウェイトまで
+// バンドルに含まれ、アプリのサイズが 10MB 以上増える
+import { MPLUSRounded1c_400Regular } from '@expo-google-fonts/m-plus-rounded-1c/400Regular';
+import { MPLUSRounded1c_500Medium } from '@expo-google-fonts/m-plus-rounded-1c/500Medium';
+import { MPLUSRounded1c_700Bold } from '@expo-google-fonts/m-plus-rounded-1c/700Bold';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -21,9 +21,9 @@ export default function RootLayout() {
   const c = useTheme();
 
   const [fontsLoaded, fontError] = useFonts({
-    ZenKakuGothicNew_400Regular,
-    ZenKakuGothicNew_500Medium,
-    ZenKakuGothicNew_700Bold,
+    MPLUSRounded1c_400Regular,
+    MPLUSRounded1c_500Medium,
+    MPLUSRounded1c_700Bold,
   });
 
   const [databaseReady, setDatabaseReady] = useState(false);

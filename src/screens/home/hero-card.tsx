@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Button, IconButton, PhotoFrame, Text } from '@/components/ui';
 import { layout, spacing } from '@/constants/theme';
@@ -27,6 +27,11 @@ export type HeroCardProps = {
 export function HeroCard({ visit }: HeroCardProps) {
   const c = useTheme();
   const router = useRouter();
+  const { height } = useWindowDimensions();
+
+  // 写真の高さに上限を設ける。縦長の写真だと、日付・美容院名・
+  // 「美容師さんに見せる」がファーストビューから押し出されてしまうため
+  const photoMaxHeight = height * layout.heroMaxHeightRatio;
   // タップした瞬間に見た目を変えるためローカルに持つ。
   // 詳細画面などで変更されて一覧が読み直されたときは、prop の値に追従させる
   // （レンダリング中の state 調整。React が推奨する同期のしかた）
@@ -77,6 +82,7 @@ export function HeroCard({ visit }: HeroCardProps) {
           uri={visit.coverUri}
           shape="card"
           aspectRatio={layout.photoAspectRatio}
+          maxHeight={photoMaxHeight}
           accessibilityLabel="最新の髪型"
         />
       </Pressable>
@@ -87,7 +93,7 @@ export function HeroCard({ visit }: HeroCardProps) {
             {formatDate(visit.visitedAt)}
           </Text>
           {salonLine ? (
-            <Text variant="caption" color="textFaint" numberOfLines={1}>
+            <Text variant="caption" color="textMuted" numberOfLines={1}>
               {salonLine}
             </Text>
           ) : null}
@@ -96,7 +102,7 @@ export function HeroCard({ visit }: HeroCardProps) {
         <IconButton
           accessibilityLabel={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
           onPress={handleToggleFavorite}>
-          <Text variant="subhead" style={{ color: isFavorite ? c.accent : c.textFaint }}>
+          <Text variant="subhead" style={{ color: isFavorite ? c.accentSecondary : c.textFaint }}>
             {isFavorite ? '♥' : '♡'}
           </Text>
         </IconButton>
@@ -104,7 +110,8 @@ export function HeroCard({ visit }: HeroCardProps) {
 
       <Button
         label="美容師さんに見せる"
-        variant="secondary"
+        variant="primary"
+        sink
         fullWidth
         onPress={openShowcase}
         style={styles.showButton}

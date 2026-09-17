@@ -1,6 +1,6 @@
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
 
-import { radius, spacing, typography } from '@/constants/theme';
+import { border, radius, spacing, typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** 記録画面のメモ欄で必ず出す例文。指定の文言を変えないこと */
@@ -28,7 +28,13 @@ export function MemoField({ minHeight = 160, placeholder, ...rest }: MemoFieldPr
       style={[
         styles.input,
         typography.body,
-        { minHeight, color: c.text, backgroundColor: c.surfaceSunken },
+        {
+          minHeight,
+          color: c.text,
+          backgroundColor: c.surfaceSunken,
+          borderWidth: border.bold,
+          borderColor: c.outlineSubtle,
+        },
       ]}
       {...rest}
     />
