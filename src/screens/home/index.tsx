@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BLUR_HEADER_HEIGHT, BlurHeader, EmptyState, Fab, Text } from '@/components/ui';
 import { DEV_SKIP_PAYWALL } from '@/constants/dev';
-import { FREE_VISIT_LIMIT, layout, screenPadding, spacing } from '@/constants/theme';
+import { depth, FREE_VISIT_LIMIT, layout, screenPadding, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
 import { useTheme } from '@/hooks/use-theme';
 import { useVisits } from '@/hooks/use-visits';
@@ -21,6 +22,10 @@ export function Home() {
 
   const { visits, count, loading, reload } = useVisits();
   const { isPro } = useEntitlement();
+
+  // ヘッダーはリストに重なっているので、その実測の高さだけ中身を下げる。
+  // 実測が来るまでは見積もりを使い、初回のちらつきを防ぐ
+  const [headerHeight, setHeaderHeight] = useState(insets.top + BLUR_HEADER_HEIGHT);
 
   // グリッドの列幅を先に決める。FlatList の numColumns は各セルに幅を配らないため
   const gridWidth = width - screenPadding * 2;
@@ -49,7 +54,7 @@ export function Home() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <BlurHeader title="hairlog" />
+      <BlurHeader title="hairlog" onHeightChange={setHeaderHeight} />
 
       <FlatList
         data={rest}
@@ -60,9 +65,15 @@ export function Home() {
         contentContainerStyle={[
           styles.content,
           {
-            // ヘッダーはリストに重なっているので、その分だけ内容を下げる
-            paddingTop: insets.top + BLUR_HEADER_HEIGHT + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxl * 2,
+            paddingTop: headerHeight + spacing.lg,
+            // ＋ボタンの上端からさらに spacing.xl 空ける。
+            // 最後の行の日付がボタンに隠れないようにするため
+            paddingBottom:
+              insets.bottom +
+              layout.fabInset +
+              layout.fabSize +
+              depth.solid +
+              spacing.xl,
           },
         ]}
         ListHeaderComponent={

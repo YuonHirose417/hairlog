@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SolidSurface } from '@/components/ui/solid-surface';
 import { Text } from '@/components/ui/text';
-import { radius, spacing } from '@/constants/theme';
+import { layout, radius, spacing } from '@/constants/theme';
 
 export type FabProps = {
   onPress: (event: GestureResponderEvent) => void;
@@ -14,8 +14,6 @@ export type FabProps = {
   symbol?: string;
   disabled?: boolean;
 };
-
-const SIZE = 60;
 
 /**
  * 右下に浮かぶ主要操作ボタン。
@@ -44,7 +42,7 @@ export function Fab({ onPress, accessibilityLabel, symbol = '＋', disabled = fa
       onPressOut={() => setPressed(false)}
       style={[
         styles.position,
-        { bottom: insets.bottom + spacing.lg, right: spacing.md },
+        { bottom: insets.bottom + layout.fabInset, right: spacing.md },
         disabled && styles.disabled,
       ]}>
       <SolidSurface
@@ -66,8 +64,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   face: {
-    width: SIZE,
-    height: SIZE,
+    width: layout.fabSize,
+    height: layout.fabSize,
     alignItems: 'center',
     justifyContent: 'center',
   },

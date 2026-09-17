@@ -71,7 +71,7 @@ export function SolidSurface({
   }));
 
   return (
-    <View style={[{ paddingBottom: depth }, style]}>
+    <View style={[{ paddingBottom: depth, flexShrink: 1 }, style]}>
       {/* 影の面。押しても動かさない */}
       <View
         pointerEvents="none"
@@ -88,6 +88,8 @@ export function SolidSurface({
             borderColor: c[outline],
             borderWidth,
             borderRadius,
+            // 中身が長くても親の幅に収まるよう縮める
+            flexShrink: 1,
           },
           contentStyle,
           faceStyle,

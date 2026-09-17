@@ -12,6 +12,12 @@ export type BlurHeaderProps = {
   left?: React.ReactNode;
   /** 右端に置く要素（♡ や共有など） */
   right?: React.ReactNode;
+  /**
+   * 実測した高さを通知する。
+   * 定数からの見積もり（セーフエリア + バー + 下線）は端末やフォントスケールで
+   * ズレて中身に重なるため、リストの上余白はこの実測値から決めること。
+   */
+  onHeightChange?: (height: number) => void;
 };
 
 /** セーフエリアを除いた、ヘッダーの見た目の高さ */
@@ -21,10 +27,11 @@ export const BLUR_HEADER_HEIGHT = layout.headerHeight;
  * リストの上に重ねる半透明のヘッダー。
  *
  * **絶対配置で中身に重ねる。** 縦に積むと blur の意味がなく、写真が透けない。
- * 使う側は、リストの contentContainerStyle に
- * `insets.top + BLUR_HEADER_HEIGHT` ぶんの paddingTop を足すこと。
+ * 使う側は onHeightChange で受けた**実測の高さ**を、リストの
+ * contentContainerStyle の paddingTop に足すこと。
+ * BLUR_HEADER_HEIGHT は実測が来るまでの初期値としてだけ使う。
  */
-export function BlurHeader({ title, left, right }: BlurHeaderProps) {
+export function BlurHeader({ title, left, right, onHeightChange }: BlurHeaderProps) {
   const c = useTheme();
   const scheme = useThemeScheme();
   const insets = useSafeAreaInsets();
@@ -33,6 +40,7 @@ export function BlurHeader({ title, left, right }: BlurHeaderProps) {
     <BlurView
       intensity={40}
       tint={colors[scheme].blurTint}
+      onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height)}
       style={[
         styles.container,
         { paddingTop: insets.top, borderBottomColor: c.outlineSubtle },

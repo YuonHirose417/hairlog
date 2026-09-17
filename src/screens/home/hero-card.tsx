@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Button, IconButton, PhotoFrame, Text } from '@/components/ui';
+import { Button, Card, IconButton, PhotoFrame, Text } from '@/components/ui';
 import { layout, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toggleFavorite } from '@/lib/db';
@@ -16,6 +16,10 @@ export type HeroCardProps = {
 
 /**
  * 最新の髪型。ホームで一番大きく出る要素。
+ *
+ * 写真からボタンまでを Card の枠（outlineSubtle）で囲み、1つのまとまりとして
+ * 見せる。**枠はカードのものであって、写真自体には輪郭も影も付けない。**
+ * 写真は shape="none" のまま、カードの overflow: hidden で角丸に切り抜かれる。
  *
  * **写真の上には何も重ねない。** 日付・美容院・担当者・♡・ボタンはすべて
  * 写真の下に置く。写真の色を邪魔しないため。
@@ -70,7 +74,7 @@ export function HeroCard({ visit }: HeroCardProps) {
   }
 
   return (
-    <View style={styles.container}>
+    <Card flat flush style={styles.container}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${formatDate(visit.visitedAt)} の記録を開く`}
@@ -80,43 +84,46 @@ export function HeroCard({ visit }: HeroCardProps) {
         style={({ pressed }) => pressed && styles.pressed}>
         <PhotoFrame
           uri={visit.coverUri}
-          shape="card"
+          // 角丸はカード側が持つ。写真自体には付けない
+          shape="none"
           aspectRatio={layout.photoAspectRatio}
           maxHeight={photoMaxHeight}
           accessibilityLabel="最新の髪型"
         />
       </Pressable>
 
-      <View style={styles.meta}>
-        <View style={styles.metaText}>
-          <Text variant="caption" color="textMuted">
-            {formatDate(visit.visitedAt)}
-          </Text>
-          {salonLine ? (
-            <Text variant="caption" color="textMuted" numberOfLines={1}>
-              {salonLine}
+      <View style={styles.body}>
+        <View style={styles.meta}>
+          <View style={styles.metaText}>
+            <Text variant="caption" color="textMuted">
+              {formatDate(visit.visitedAt)}
             </Text>
-          ) : null}
+            {salonLine ? (
+              <Text variant="caption" color="textMuted" numberOfLines={1}>
+                {salonLine}
+              </Text>
+            ) : null}
+          </View>
+
+          <IconButton
+            accessibilityLabel={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
+            onPress={handleToggleFavorite}>
+            <Text variant="subhead" style={{ color: isFavorite ? c.accentSecondary : c.textFaint }}>
+              {isFavorite ? '♥' : '♡'}
+            </Text>
+          </IconButton>
         </View>
 
-        <IconButton
-          accessibilityLabel={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
-          onPress={handleToggleFavorite}>
-          <Text variant="subhead" style={{ color: isFavorite ? c.accentSecondary : c.textFaint }}>
-            {isFavorite ? '♥' : '♡'}
-          </Text>
-        </IconButton>
+        <Button
+          label="美容師さんに見せる"
+          variant="primary"
+          sink
+          fullWidth
+          onPress={openShowcase}
+          style={styles.showButton}
+        />
       </View>
-
-      <Button
-        label="美容師さんに見せる"
-        variant="primary"
-        sink
-        fullWidth
-        onPress={openShowcase}
-        style={styles.showButton}
-      />
-    </View>
+    </Card>
   );
 }
 
@@ -127,11 +134,13 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
   },
+  body: {
+    padding: spacing.md,
+  },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
     gap: spacing.sm,
   },
   metaText: {

@@ -23,22 +23,26 @@
  */
 export const colors = {
   light: {
-    /** 画面の地。わずかに温かい白 */
-    background: '#FFFBF0',
+    /**
+     * 画面の地。ほぼ無彩色の白。
+     * クリーム（#FFFBF0）はアクセントのイエローと色相が近く、ボタンが背景に
+     * 馴染んでしまうため黄みを抜いた。surface(#FFFFFF) との差は残してある。
+     */
+    background: '#F9F9F7',
     /** カード・シートなど一段持ち上がった面 */
     surface: '#FFFFFF',
     /** 入力欄など、地よりわずかに沈んだ面 */
-    surfaceSunken: '#F4F1E6',
+    surfaceSunken: '#EFEFEC',
     /** 本文。黒ではなくネイビー */
     text: '#1B2430',
     /** 補助テキスト。日付・美容院名など「読ませたい12px」はこれを使う（5.66:1） */
     textMuted: '#5A6675',
-    /** 最も弱い注釈・プレースホルダー（4.56:1） */
-    textFaint: '#6B7482',
+    /** 最も弱い注釈・プレースホルダー（背景 #F9F9F7 上で 4.80:1／白の上で 5.06:1） */
+    textFaint: '#676F7D',
     /** ボタン・バッジ・＋ の太い輪郭 */
     outline: '#1B2430',
     /** カードなど、主張させたくない枠 */
-    outlineSubtle: '#E2DECF',
+    outlineSubtle: '#E3E3DF',
     /** 背面に敷く影の面の色 */
     solidShadow: '#1B2430',
     /** 主要操作（＋・見せる・保存） */
@@ -52,7 +56,7 @@ export const colors = {
     /** 削除など、取り消せない操作 */
     danger: '#E0524A',
     /** 写真を置く下地。読み込み中もここが見える */
-    photoBackground: '#EDEAE0',
+    photoBackground: '#EAEAE7',
     /** モーダルの背後を覆う色 */
     scrim: 'rgba(27, 36, 48, 0.32)',
     /** expo-blur の tint */
@@ -275,6 +279,10 @@ export const layout = {
   heroMaxHeightRatio: 0.44,
   /** タップ領域の最小サイズ */
   minTouchTarget: 44,
+  /** ＋ボタンの直径 */
+  fabSize: 60,
+  /** ＋ボタンの下端と画面下（セーフエリア）の間隔 */
+  fabInset: spacing.lg,
   /** blur ヘッダーの高さ（セーフエリアを除く） */
   headerHeight: 52,
 } as const;

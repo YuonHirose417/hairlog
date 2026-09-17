@@ -31,6 +31,11 @@ export type ButtonProps = {
    * **「美容師さんに見せる」など主要なボタンだけに使うこと。**
    */
   sink?: boolean;
+  /**
+   * ラベルの最大行数。長いラベルはここまで折り返して収める。
+   * フォント縮小は使わない（12px を割って最小サイズのルールを破るため）。
+   */
+  numberOfLines?: number;
   /** 押下時の触覚フィードバックを止めたいとき */
   haptic?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -61,6 +66,7 @@ export function Button({
   loading = false,
   fullWidth = false,
   sink = false,
+  numberOfLines = 2,
   haptic = true,
   style,
   leading,
@@ -84,7 +90,11 @@ export function Button({
   ) : (
     <View style={styles.content}>
       {leading}
-      <Text variant="subhead" color={look.label}>
+      <Text
+        variant="subhead"
+        color={look.label}
+        numberOfLines={numberOfLines}
+        style={styles.label}>
         {label}
       </Text>
     </View>
@@ -99,6 +109,7 @@ export function Button({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       style={[
+        styles.pressable,
         fullWidth && styles.fullWidth,
         isInactive && styles.inactive,
         !look.solid && pressed && styles.barePressed,
@@ -122,8 +133,14 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
+  // RN は flexShrink の既定が 0 なので、明示しないと親が狭くても中身が縮まず
+  // 文字が横にはみ出して切れる。ボタンの外から中の Text まで通して縮ませる
+  pressable: {
+    flexShrink: 1,
+  },
   face: {
     minHeight: layout.minTouchTarget,
+    maxWidth: '100%',
     // 輪郭が太いぶん、内側の余白を広げて窮屈に見えないようにする
     paddingHorizontal: spacing.lg + border.bold,
     paddingVertical: spacing.sm + spacing.xs,
@@ -132,6 +149,7 @@ const styles = StyleSheet.create({
   },
   bare: {
     minHeight: layout.minTouchTarget,
+    maxWidth: '100%',
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -140,6 +158,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  label: {
+    flexShrink: 1,
+    textAlign: 'center',
   },
   fullWidth: {
     alignSelf: 'stretch',
