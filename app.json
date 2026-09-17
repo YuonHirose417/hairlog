@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "髪型の写真を撮影するためにカメラを使用します。写真は端末内にのみ保存され、外部には送信されません。",
         "NSPhotoLibraryUsageDescription": "過去の髪型の写真を記録に追加するために写真ライブラリを使用します。選んだ写真は端末内にのみ保存されます。",
-        "NSPhotoLibraryAddUsageDescription": "記録した髪型の写真をカメラロールに保存するために使用します。"
+        "NSPhotoLibraryAddUsageDescription": "記録した髪型の写真をカメラロールに保存するために使用します。",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -24,13 +25,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -55,7 +50,8 @@
         "expo-image-picker",
         {
           "photosPermission": "過去の髪型の写真を記録に追加するために写真ライブラリを使用します。選んだ写真は端末内にのみ保存されます。",
-          "cameraPermission": "髪型の写真を撮影するためにカメラを使用します。写真は端末内にのみ保存され、外部には送信されません。"
+          "cameraPermission": "髪型の写真を撮影するためにカメラを使用します。写真は端末内にのみ保存され、外部には送信されません。",
+          "microphonePermission": false
         }
       ],
       [
@@ -63,7 +59,10 @@
         {
           "photosPermission": "記録した髪型の写真をカメラロールに保存するために使用します。",
           "savePhotosPermission": "記録した髪型の写真をカメラロールに保存するために使用します。",
-          "isAccessMediaLocationEnabled": false
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ],
       [
