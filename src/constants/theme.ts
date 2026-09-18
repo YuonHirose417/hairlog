@@ -237,6 +237,15 @@ export const typography = {
     fontSize: fontSize.display,
     lineHeight: lineHeight.display,
   },
+  /**
+   * 見せるモードのメモ。腕を伸ばした距離から美容師さんに読んでもらうので大きくする。
+   * 太字だと長文が重くなるので regular のまま、行間だけ広く取る。
+   */
+  showcaseMemo: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.title,
+    lineHeight: 32,
+  },
 } as const;
 
 export type TypographyVariant = keyof typeof typography;
