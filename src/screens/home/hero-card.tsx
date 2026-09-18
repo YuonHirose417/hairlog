@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Button, Card, IconButton, PhotoFrame, Text } from '@/components/ui';
+import { Button, Card, IconButton, PhotoCountBadge, PhotoFrame, Text } from '@/components/ui';
 import { layout, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toggleFavorite } from '@/lib/db';
@@ -95,8 +95,10 @@ export function HeroCard({ visit, onChanged }: HeroCardProps) {
             shape="none"
             aspectRatio={layout.photoAspectRatio}
             maxHeight={photoMaxHeight}
-            accessibilityLabel="最新の髪型"
-          />
+            accessibilityLabel="最新の髪型">
+            {/* 写真の上に乗せてよいのはこのバッジだけ。2枚以上のときだけ出る */}
+            <PhotoCountBadge count={visit.photoCount} inset={spacing.sm} />
+          </PhotoFrame>
         </View>
       </Pressable>
 

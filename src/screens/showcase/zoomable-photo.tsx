@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -34,8 +35,26 @@ export type ZoomablePhotoProps = {
  *
  * 倍率と位置は共有値（UI スレッド）で持ち、React は再描画しない。
  * RN ランタイムへ渡すのは **拡大の開始と終了だけ**（onUpdate からは呼ばない）。
+ *
+ * Pinch は2本指、Tap は単発なので1本指のスクロールを奪わない。
+ * 奪うのは Pan だけなので、そこだけ拡大中に限って有効にする。
  */
 export function ZoomablePhoto({ uri, width, height, onZoomChange }: ZoomablePhotoProps) {
+  /**
+   * Pan を有効にしてよいかの判定。拡大状態は **写真ごとに持つ**。
+   * 親のひとつの state で代用すると、1枚目を拡大したまま2枚目へ行ったときに
+   * 2枚目の Pan まで有効になってしまう。
+   */
+  const [zoomed, setZoomed] = useState(false);
+
+  const handleZoom = useCallback(
+    (next: boolean) => {
+      setZoomed(next);
+      onZoomChange(next);
+    },
+    [onZoomChange]
+  );
+
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -49,7 +68,7 @@ export function ZoomablePhoto({ uri, width, height, onZoomChange }: ZoomablePhot
     'worklet';
     if (notified.get() === zoomed) return;
     notified.set(zoomed);
-    scheduleOnRN(onZoomChange, zoomed);
+    scheduleOnRN(handleZoom, zoomed);
   }
 
   function reset() {
@@ -85,8 +104,13 @@ export function ZoomablePhoto({ uri, width, height, onZoomChange }: ZoomablePhot
     });
 
   const pan = Gesture.Pan()
-    // 等倍のときは触らせない。横スワイプのページ送りに譲る
-    .enabled(true)
+    /**
+     * **等倍のときは本当に無効にする。**
+     * onUpdate で早期 return するだけでは「動かさない」だけで、ジェスチャの起動は
+     * 止まらない。等倍でも Pan が横ドラッグを奪い、親の FlatList までスクロールが
+     * 届かず、2枚目以降にスワイプできなくなる。
+     */
+    .enabled(zoomed)
     .onStart(() => {
       savedX.set(translateX.get());
       savedY.set(translateY.get());

@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
-import { PhotoFrame, Text } from '@/components/ui';
-import { border, radius, spacing, sticker } from '@/constants/theme';
+import { PhotoCountBadge, PhotoFrame, Text } from '@/components/ui';
+import { spacing } from '@/constants/theme';
 import { formatShortDate } from '@/lib/format';
 import { showVisitActions } from '@/screens/home/visit-actions';
 import type { VisitSummary } from '@/types/models';
@@ -44,13 +44,7 @@ export function VisitGridCell({ visit, width, onChanged }: VisitGridCellProps) {
         shape="thumb"
         // グリッドは正方形で揃える（3:4 はヒーローカード用）
         aspectRatio={1}>
-        {visit.photoCount > 1 ? (
-          <View style={styles.badge}>
-            <Text variant="caption" style={styles.badgeText}>
-              {visit.photoCount}
-            </Text>
-          </View>
-        ) : null}
+        <PhotoCountBadge count={visit.photoCount} />
       </PhotoFrame>
 
       <Text variant="caption" color="textMuted" numberOfLines={1} style={styles.date}>
@@ -62,25 +56,6 @@ export function VisitGridCell({ visit, width, onChanged }: VisitGridCellProps) {
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
-  badge: {
-    position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    minWidth: 22,
-    paddingHorizontal: spacing.xs + 2,
-    paddingVertical: 1,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // シール風。写真の上に乗る唯一の要素なので、アクセント色は使わず
-    // 白フチ + 暗い無彩色だけにして写真の色に干渉させない
-    backgroundColor: sticker.background,
-    borderWidth: border.bold,
-    borderColor: sticker.border,
-  },
-  badgeText: {
-    color: sticker.text,
-  },
   date: {
     marginTop: spacing.xs,
   },
