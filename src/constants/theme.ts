@@ -51,6 +51,8 @@ export const colors = {
     onAccent: '#1B2430',
     /** ♡・選択状態 */
     accentSecondary: '#2B4C7E',
+    /** accentSecondary の上に置く文字（8.7:1） */
+    onAccentSecondary: '#FFFFFF',
     /** accentSecondary の淡い面 */
     accentSubtle: '#E7EDF6',
     /** 削除など、取り消せない操作 */
@@ -81,6 +83,8 @@ export const colors = {
     onAccent: '#1B2430',
     /** ネイビーは暗い地で沈むのでスカイに置換 */
     accentSecondary: '#7FB3E8',
+    /** スカイは明るいので、その上は ink（7.1:1） */
+    onAccentSecondary: '#1B2430',
     accentSubtle: '#22303F',
     danger: '#FF7A6E',
     photoBackground: '#2A2F38',

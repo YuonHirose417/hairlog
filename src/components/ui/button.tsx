@@ -23,6 +23,12 @@ export type ButtonProps = {
   /** primary / secondary は輪郭とソリッド影がつく。ghost / danger は素の文字だけ */
   variant?: ButtonVariant;
   disabled?: boolean;
+  /**
+   * 押せない見た目にするが、**押すことはできる**。
+   * 押したときに理由を説明したいときに使う（例: 写真が無いまま保存を押した）。
+   * 本当に押させたくないときは disabled を使う。
+   */
+  inactive?: boolean;
   loading?: boolean;
   /** 親の幅いっぱいに広げる */
   fullWidth?: boolean;
@@ -63,6 +69,7 @@ export function Button({
   onPress,
   variant = 'primary',
   disabled = false,
+  inactive = false,
   loading = false,
   fullWidth = false,
   sink = false,
@@ -111,7 +118,7 @@ export function Button({
       style={[
         styles.pressable,
         fullWidth && styles.fullWidth,
-        isInactive && styles.inactive,
+        (isInactive || inactive) && styles.inactive,
         !look.solid && pressed && styles.barePressed,
         style,
       ]}>

@@ -33,7 +33,7 @@ export function MemoField({ minHeight = 160, placeholder, ...rest }: MemoFieldPr
           color: c.text,
           backgroundColor: c.surfaceSunken,
           borderWidth: border.bold,
-          borderColor: c.outlineSubtle,
+          borderColor: c.outline,
         },
       ]}
       {...rest}
@@ -43,7 +43,7 @@ export function MemoField({ minHeight = 160, placeholder, ...rest }: MemoFieldPr
 
 const styles = StyleSheet.create({
   input: {
-    borderRadius: radius.control,
+    borderRadius: radius.card,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },

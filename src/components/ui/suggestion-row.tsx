@@ -1,9 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { SolidSurface } from '@/components/ui/solid-surface';
 import { Text } from '@/components/ui/text';
-import { border, radius, spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { depth, radius, spacing } from '@/constants/theme';
 
 export type SuggestionRowProps = {
   /** 過去に入力された値。db.distinctSalonNames() などの結果を渡す */
@@ -18,10 +18,10 @@ export type SuggestionRowProps = {
  *
  * これは選択式入力（チップ・プルダウン）の追加ではなく、
  * 自由入力の手間を省くための補助。候補に無い値も自由に入力できる。
+ *
+ * 選択中は accentSecondary を敷いて、どれが選ばれているか一目で分かるようにする。
  */
 export function SuggestionRow({ items, selected, onSelect }: SuggestionRowProps) {
-  const c = useTheme();
-
   if (items.length === 0) return null;
 
   return (
@@ -41,18 +41,20 @@ export function SuggestionRow({ items, selected, onSelect }: SuggestionRowProps)
               Haptics.selectionAsync().catch(() => {});
               onSelect(item);
             }}
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: isSelected ? c.accentSubtle : c.surfaceSunken,
-                borderWidth: border.bold,
-                borderColor: isSelected ? c.accentSecondary : c.outlineSubtle,
-              },
-              pressed && styles.pressed,
-            ]}>
-            <Text variant="caption" color={isSelected ? 'accentSecondary' : 'textMuted'} numberOfLines={1}>
-              {item}
-            </Text>
+            style={({ pressed }) => pressed && styles.pressed}>
+            <SolidSurface
+              background={isSelected ? 'accentSecondary' : 'surface'}
+              outline="outline"
+              borderRadius={radius.pill}
+              depth={depth.small}
+              contentStyle={styles.chip}>
+              <Text
+                variant="caption"
+                color={isSelected ? 'onAccentSecondary' : 'text'}
+                numberOfLines={1}>
+                {item}
+              </Text>
+            </SolidSurface>
           </Pressable>
         );
       })}
@@ -68,8 +70,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
     maxWidth: 200,
   },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: 0.7 },
 });

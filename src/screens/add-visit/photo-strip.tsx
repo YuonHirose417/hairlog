@@ -9,9 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { PhotoFrame, Text } from '@/components/ui';
-import { border, motion, radius, spacing, sticker } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { PhotoFrame, SolidSurface, Text } from '@/components/ui';
+import { border, depth, motion, radius, spacing, sticker } from '@/constants/theme';
 
 /** サムネイルの一辺 */
 const TILE = 96;
@@ -34,6 +33,11 @@ export type PhotoStripProps = {
  * 枚数が数枚の想定なので、仮想化せず ScrollView に素直に並べる。
  */
 export function PhotoStrip({ uris, onReorder, onRemove, onAdd }: PhotoStripProps) {
+  // 写真は必須なので、1枚も無いときは大きく出して最初に目が行くようにする
+  if (uris.length === 0) {
+    return <EmptyAddTile onPress={onAdd} />;
+  }
+
   return (
     <ScrollView
       horizontal
@@ -139,25 +143,51 @@ function PhotoTile({ uri, index, total, onRemove, onMove }: PhotoTileProps) {
   );
 }
 
+/** 写真が1枚以上あるときの、末尾に置く小さな追加タイル */
 function AddTile({ onPress }: { onPress: () => void }) {
-  const c = useTheme();
-
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="写真を追加"
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.addTile,
-        { borderColor: c.outline, backgroundColor: c.surfaceSunken },
-        pressed && styles.pressed,
-      ]}>
-      <Text variant="title" color="textMuted">
-        ＋
-      </Text>
-      <Text variant="caption" color="textMuted">
-        写真
-      </Text>
+      style={({ pressed }) => pressed && styles.pressed}>
+      <SolidSurface
+        background="surfaceSunken"
+        outline="outline"
+        borderRadius={radius.thumb}
+        depth={depth.small}
+        contentStyle={styles.addTile}>
+        <Text variant="title" color="textMuted">
+          ＋
+        </Text>
+      </SolidSurface>
+    </Pressable>
+  );
+}
+
+/** 写真が0枚のときの、大きく目立つ追加タイル */
+function EmptyAddTile({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="写真を追加"
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}>
+      <SolidSurface
+        background="surfaceSunken"
+        outline="outline"
+        borderRadius={radius.card}
+        contentStyle={styles.emptyTile}>
+        <Text variant="display" color="textMuted">
+          ＋
+        </Text>
+        <Text variant="subhead" color="text">
+          写真を追加
+        </Text>
+        <Text variant="caption" color="textMuted">
+          正面・横・後ろをまとめて選べます
+        </Text>
+      </SolidSurface>
     </Pressable>
   );
 }
@@ -203,11 +233,15 @@ const styles = StyleSheet.create({
   addTile: {
     width: TILE,
     height: TILE,
-    borderRadius: radius.thumb,
-    borderWidth: border.bold,
-    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyTile: {
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
   },
   pressed: { opacity: 0.6 },
 });

@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -8,10 +7,13 @@ import { layout, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toggleFavorite } from '@/lib/db';
 import { formatDate, formatSalonLine } from '@/lib/format';
+import { showVisitActions } from '@/screens/home/visit-actions';
 import type { VisitSummary } from '@/types/models';
 
 export type HeroCardProps = {
   visit: VisitSummary;
+  /** 削除されたあとに一覧を読み直す */
+  onChanged: () => void;
 };
 
 /**
@@ -25,10 +27,10 @@ export type HeroCardProps = {
  * 写真の下に置く。写真の色を邪魔しないため。
  *
  * - カード本体のタップ → 記録詳細
- * - カードの長押し     → 見せるモード
+ * - カードの長押し     → メニュー（見せる / 削除）
  * - 「美容師さんに見せる」→ 見せるモード
  */
-export function HeroCard({ visit }: HeroCardProps) {
+export function HeroCard({ visit, onChanged }: HeroCardProps) {
   const c = useTheme();
   const router = useRouter();
   const { height } = useWindowDimensions();
@@ -57,8 +59,7 @@ export function HeroCard({ visit }: HeroCardProps) {
   }
 
   function handleLongPress() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    openShowcase();
+    showVisitActions(visit.id, { onShowcase: openShowcase, onDeleted: onChanged });
   }
 
   async function handleToggleFavorite() {

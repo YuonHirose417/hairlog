@@ -11,18 +11,18 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, MemoField, SuggestionRow, Text, TextField } from '@/components/ui';
+import { Button, MemoField, Section, SuggestionRow, TextField } from '@/components/ui';
 import { screenPadding, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   addPhoto,
   createVisit,
-  deleteVisit,
   distinctSalonNames,
   distinctStylistNames,
   lastVisit,
 } from '@/lib/db';
 import { savePhoto } from '@/lib/photos';
+import { deleteVisitWithPhotos } from '@/lib/visits';
 import { alertPermissionDenied, pickPhotos } from '@/lib/pick-photos';
 import { DateField } from '@/screens/add-visit/date-field';
 import { PhotoStrip } from '@/screens/add-visit/photo-strip';
@@ -88,8 +88,10 @@ export function AddVisit() {
     void addPhotos();
   }, [addPhotos]);
 
+  // 写真は必須。メモ・美容院名・担当者名は任意
+  const hasPhotos = uris.length > 0;
   const hasInput =
-    uris.length > 0 ||
+    hasPhotos ||
     memo.trim().length > 0 ||
     salonName.trim().length > 0 ||
     stylistName.trim().length > 0;
@@ -106,9 +108,9 @@ export function AddVisit() {
   }
 
   async function handleSave() {
-    // 日付は常に入っているので判定に含めない。中身が空の記録は作らない
-    if (!hasInput) {
-      Alert.alert('写真かメモを入力してください', '写真だけ、メモだけでも保存できます。');
+    // 写真の無い記録は「この髪型よかった」を思い出す役に立たないので作らせない
+    if (!hasPhotos) {
+      Alert.alert('写真を1枚以上追加してください', 'メモや美容院名は後からでも構いません。');
       return;
     }
     if (saving) return;
@@ -134,9 +136,9 @@ export function AddVisit() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       router.back();
     } catch (error) {
-      // 途中まで作られた記録を残さない。入力は画面に残したまま知らせる
+      // 途中まで作られた記録を残さない。既にコピー済みの写真ファイルも一緒に消す
       if (createdId) {
-        await deleteVisit(createdId).catch(() => {});
+        await deleteVisitWithPhotos(createdId).catch(() => {});
       }
       console.error('[hairlog] 記録の保存に失敗しました', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -150,51 +152,51 @@ export function AddVisit() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Button label="閉じる" variant="ghost" onPress={handleClose} />
-        <Button label="保存" sink loading={saving} onPress={handleSave} />
+        <Button label="閉じる" variant="secondary" onPress={handleClose} />
+        <Button label="保存" sink inactive={!hasPhotos} loading={saving} onPress={handleSave} />
       </View>
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + spacing.xxl },
-        ]}>
+        // 横の余白は Section が持つ。ここで足すと見出しだけ二重に下がる
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
         {/* 日付・美容院・担当者は上部に小さく。写真とメモを大きく見せる */}
-        <DateField value={visitedAt} onChange={setVisitedAt} />
+        <Section title="いつ">
+          <DateField value={visitedAt} onChange={setVisitedAt} />
+        </Section>
 
-        <TextField
-          label="美容院"
-          value={salonName}
-          onChangeText={setSalonName}
-          placeholder="未入力"
-          returnKeyType="next"
-        />
-        <SuggestionRow items={salonOptions} selected={salonName} onSelect={setSalonName} />
+        <Section title="どこで・だれに">
+          <TextField
+            label="美容院"
+            value={salonName}
+            onChangeText={setSalonName}
+            placeholder="未入力"
+            returnKeyType="next"
+          />
+          <SuggestionRow items={salonOptions} selected={salonName} onSelect={setSalonName} />
 
-        <TextField
-          label="担当者"
-          value={stylistName}
-          onChangeText={setStylistName}
-          placeholder="未入力"
-          returnKeyType="done"
-        />
-        <SuggestionRow items={stylistOptions} selected={stylistName} onSelect={setStylistName} />
+          <TextField
+            label="担当者"
+            value={stylistName}
+            onChangeText={setStylistName}
+            placeholder="未入力"
+            returnKeyType="done"
+          />
+          <SuggestionRow items={stylistOptions} selected={stylistName} onSelect={setStylistName} />
+        </Section>
 
-        <Text variant="caption" color="textMuted" style={styles.sectionLabel}>
-          {uris.length > 0 ? `写真 ${uris.length}枚` : '写真'}
-        </Text>
-        <PhotoStrip
-          uris={uris}
-          onReorder={setUris}
-          onRemove={(index) => setUris((previous) => previous.filter((_, i) => i !== index))}
-          onAdd={() => void addPhotos()}
-        />
+        <Section title={hasPhotos ? `写真 ${uris.length}枚（必須）` : '写真（必須）'}>
+          <PhotoStrip
+            uris={uris}
+            onReorder={setUris}
+            onRemove={(index) => setUris((previous) => previous.filter((_, i) => i !== index))}
+            onAdd={() => void addPhotos()}
+          />
+        </Section>
 
-        <Text variant="caption" color="textMuted" style={styles.memoLabel}>
-          メモ
-        </Text>
-        <MemoField value={memo} onChangeText={setMemo} minHeight={200} />
+        <Section title="メモ">
+          <MemoField value={memo} onChangeText={setMemo} minHeight={200} />
+        </Section>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -211,15 +213,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: screenPadding,
     paddingBottom: spacing.sm,
     gap: spacing.sm,
-  },
-  content: {
-    paddingHorizontal: screenPadding,
-  },
-  sectionLabel: {
-    marginTop: spacing.md,
-  },
-  memoLabel: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
   },
 });
