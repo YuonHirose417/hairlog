@@ -25,6 +25,7 @@ import {
 } from '@/lib/db';
 import { savePhoto } from '@/lib/photos';
 import { deleteVisitWithPhotos, syncVisitPhotos } from '@/lib/visits';
+import { cancelRemindersForDate } from '@/lib/notifications';
 import { alertPermissionDenied, pickPhotos } from '@/lib/pick-photos';
 import { DateField } from '@/screens/add-visit/date-field';
 import { PhotoStrip } from '@/screens/add-visit/photo-strip';
@@ -43,15 +44,24 @@ import { PhotoStrip } from '@/screens/add-visit/photo-strip';
 export type AddVisitProps = {
   /** 編集する記録の id。未指定なら新規作成 */
   visitId?: string;
+  /**
+   * 日付の初期値（ISO8601）。撮影リマインドの通知から開いたときに**予約日**が入る。
+   * 翌朝タップされても、記録の日付が予約日になるようにするため。
+   */
+  initialDate?: string;
 };
 
-export function AddVisit({ visitId }: AddVisitProps) {
+export function AddVisit({ visitId, initialDate }: AddVisitProps) {
   const editing = Boolean(visitId);
   const c = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [visitedAt, setVisitedAt] = useState(() => new Date());
+  const [visitedAt, setVisitedAt] = useState(() => {
+    if (!initialDate) return new Date();
+    const parsed = new Date(initialDate);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  });
   const [salonName, setSalonName] = useState('');
   const [stylistName, setStylistName] = useState('');
   const [memo, setMemo] = useState('');
@@ -185,6 +195,10 @@ export function AddVisit({ visitId }: AddVisitProps) {
           const saved = await savePhoto(uri);
           await addPhoto({ visitId: visit.id, uri: saved, takenAt: visit.visitedAt });
         }
+
+        // その日の記録が残ったので、残りの撮影リマインドは要らない。
+        // 失敗しても保存は成功しているので、握りつぶして先へ進める
+        await cancelRemindersForDate(visit.visitedAt).catch(() => {});
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

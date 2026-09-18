@@ -29,6 +29,18 @@ export function formatShortDate(iso: string, now: Date = new Date()): string {
     : `${date.getFullYear()}.${monthDay}`;
 }
 
+/** `3月14日 14:00` — 予約日時。日付だけの表示より、時刻まで見せたい場面で使う */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  return `${month}月${day}日 ${hour}:${minute}`;
+}
+
 /**
  * 美容院名と担当者名を1行にまとめる。
  *

@@ -11,6 +11,7 @@ import { useEntitlement } from '@/hooks/use-entitlement';
 import { useTheme } from '@/hooks/use-theme';
 import { useVisits } from '@/hooks/use-visits';
 import { HeroCard } from '@/screens/home/hero-card';
+import { ReminderBanner } from '@/screens/home/reminder-banner';
 import { VisitGridCell } from '@/screens/home/visit-grid-cell';
 import type { VisitSummary } from '@/types/models';
 
@@ -98,6 +99,9 @@ export function Home() {
                 <HeroCard visit={latest} />
               </Animated.View>
             ) : null}
+            {/* 最新カードの下。未登録なら控えめな1行、登録済みなら日時をはっきり */}
+            <ReminderBanner />
+
             {/* グリッドが空のときは見出しだけが浮くので出さない */}
             {rest.length > 0 ? (
               <Text variant="caption" color="textMuted" style={styles.gridHeading}>

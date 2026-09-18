@@ -552,8 +552,11 @@ export async function deleteReminder(id: string): Promise<void> {
  */
 export async function findRemindersOn(isoDate: string): Promise<PhotoReminder[]> {
   const db = await initDatabase();
-  // ISO8601 は先頭10文字が YYYY-MM-DD。端末のローカル日付で比較したいので
-  // 呼び出し側でローカル時刻の ISO 文字列を渡すこと
+  // ⚠ この関数は **UTC の日付**で比較する。appointment_at は toISOString() で
+  // 保存されるため、日本時間（UTC+9）では 09:00 より前の予約が前日扱いになり、
+  // 朝いちの美容院を取りこぼす。
+  // リマインドのキャンセルには使わないこと。lib/notifications.ts の
+  // cancelRemindersForDate() がローカルの日付キーで突き合わせる。
   const day = isoDate.slice(0, 10);
 
   const rows = await db.getAllAsync<ReminderRow>(
