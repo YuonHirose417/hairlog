@@ -5,6 +5,11 @@
  * 通知が届く。通知は端末内で完結し、サーバーには何も送らない。
  *
  * **許可はアプリ起動時に求めない。** 予約を登録しようとしたときに初めて求める。
+ *
+ * **iOS では端末の時計を進めても通知は早まらない。** 発火予定は OS 側の
+ * スケジューラが持っているため、システム時刻を手で動かしても前倒しにはならない。
+ * 動作を確かめるときは scheduleTestNotification()（1分後）で実際に待つか、
+ * HOURS_AFTER_APPOINTMENT を一時的に小さくすること（**戻し忘れに注意**）。
  */
 
 import * as Notifications from 'expo-notifications';
@@ -124,6 +129,73 @@ export async function scheduleReminder(appointmentAt: Date): Promise<void> {
     farEnough && inFuture ? await scheduleAt(eveningAt, iso) : null;
 
   await createReminder({ appointmentAt: iso, notificationId, notificationIdEvening });
+
+  // 実機で発火予定時刻を確認できるようにする。
+  // 1本目は「予約の2時間後」なので、想定より先の日時になっていないかここで分かる
+  await logNotificationDiagnostics(
+    `予約を登録（予約日時 ${appointmentAt.toLocaleString()} / 通知 ${
+      notificationIdEvening ? 2 : 1
+    }本）`
+  );
+}
+
+/**
+ * 【開発中の切り分け用】1分後にテスト通知を予約する。
+ *
+ * **本番とまったく同じ文面・同じ data** を使う。タップしたときに記録追加が
+ * 開くところまで同じ経路を通り、「通知の仕組み自体が動いているか」を切り分けられる。
+ *
+ * 本番の1本目は予約日時の2時間後なので、そのままでは当日中に届かない。
+ * 「届かない」のか「まだ来ていない」だけなのかを見分けるために使う。
+ */
+export async function scheduleTestNotification(): Promise<boolean> {
+  if (!(await ensurePermission())) {
+    await logNotificationDiagnostics('テスト通知（許可されていない）');
+    return false;
+  }
+
+  const at = new Date(Date.now() + 60_000);
+  await scheduleAt(at, at.toISOString());
+  await logNotificationDiagnostics('テスト通知を1分後に予約');
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+// 診断
+// -----------------------------------------------------------------------------
+
+/**
+ * 許可の状態と、いま予約されている通知をログに出す。
+ *
+ * **__DEV__ に限定しない。** 実機で起きた問題を後から追えるようにしておきたい。
+ * 出すのは件数と時刻だけで、写真やメモの中身は含まない。
+ */
+export async function logNotificationDiagnostics(label: string): Promise<void> {
+  const tag = '[hairlog][通知]';
+  try {
+    const permission = await Notifications.getPermissionsAsync();
+    console.log(`${tag} ${label}`);
+    console.log(`${tag} 許可:`, {
+      status: permission.status,
+      granted: permission.granted,
+      canAskAgain: permission.canAskAgain,
+      ios: permission.ios,
+    });
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    console.log(`${tag} 予約済みの通知: ${scheduled.length}件`);
+
+    scheduled.forEach((item, index) => {
+      console.log(`${tag}   [${index + 1}]`, {
+        id: item.identifier,
+        title: item.content.title,
+        // トリガの形を決め打ちせず丸ごと出す。日付以外のトリガでも読めるように
+        trigger: JSON.stringify(item.trigger),
+      });
+    });
+  } catch (error) {
+    console.log(`${tag} 診断に失敗しました`, error);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -144,6 +216,7 @@ export async function cancelReminder(): Promise<void> {
     await cancelNotifications(reminder);
     await markReminderCancelled(reminder.id);
   }
+  await logNotificationDiagnostics('予約を取り消し');
 }
 
 /**

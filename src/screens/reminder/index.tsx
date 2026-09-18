@@ -14,6 +14,7 @@ import {
   ensurePermission,
   getNextReminder,
   scheduleReminder,
+  scheduleTestNotification,
 } from '@/lib/notifications';
 import type { PhotoReminder } from '@/types/models';
 
@@ -120,6 +121,26 @@ export function Reminder() {
     }
   }
 
+  /**
+   * 【開発中の切り分け用】1分後にテスト通知を出す。
+   * 本番の1本目は予約の2時間後なので、そのままでは当日中に届かず、
+   * 「届かない」のか「まだ来ていない」だけなのか分からないため。
+   */
+  async function handleTestNotification() {
+    if (await scheduleTestNotification()) {
+      Alert.alert('1分後にテスト通知を送ります', 'アプリを開いたままでも届きます。');
+      return;
+    }
+    Alert.alert(
+      '通知が許可されていません',
+      'iPhone の「設定」→「hairlog」→「通知」から許可してください。',
+      [
+        { text: '閉じる', style: 'cancel' },
+        { text: '設定を開く', onPress: () => void Linking.openSettings() },
+      ]
+    );
+  }
+
   const showPicker = editing || !reminder;
 
   return (
@@ -203,6 +224,22 @@ export function Reminder() {
             />
           ) : null}
         </View>
+
+        {/* 開発ビルドのときだけ出す。リリースでは __DEV__ が false になり消える */}
+        {__DEV__ ? (
+          <Section title="開発用">
+            <Button
+              label="1分後にテスト通知"
+              variant="secondary"
+              fullWidth
+              onPress={() => void handleTestNotification()}
+            />
+            <Text variant="caption" color="textMuted" style={styles.note}>
+              本番と同じ文面で1分後に届きます。iOS は端末の時計を進めても通知が
+              早まらないため、実際に1分待って確認してください。
+            </Text>
+          </Section>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
