@@ -149,6 +149,8 @@ export default function RootLayout() {
           <Stack.Screen name="showcase/[id]" options={{ presentation: 'fullScreenModal' }} />
           {/* 記録追加はメモ欄を広く取りたいので全画面。キーボードが出ても窮屈にしない */}
           <Stack.Screen name="add/index" options={{ presentation: 'fullScreenModal' }} />
+          {/* 設定は階層的な画面なのでシートにせず普通に push する */}
+          <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/paywall" options={{ presentation: 'formSheet' }} />
           <Stack.Screen name="reminder" options={{ presentation: 'formSheet' }} />
         </Stack>

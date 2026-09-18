@@ -4,7 +4,7 @@ import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { Keyframe, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BLUR_HEADER_HEIGHT, BlurHeader, EmptyState, Fab, Text } from '@/components/ui';
+import { BLUR_HEADER_HEIGHT, BlurHeader, EmptyState, Fab, IconButton, Text } from '@/components/ui';
 import { DEV_SKIP_PAYWALL } from '@/constants/dev';
 import { depth, FREE_VISIT_LIMIT, layout, motion, screenPadding, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
@@ -63,7 +63,17 @@ export function Home() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <BlurHeader title="hairlog" onHeightChange={setHeaderHeight} />
+      <BlurHeader
+        title="hairlog"
+        onHeightChange={setHeaderHeight}
+        right={
+          <IconButton accessibilityLabel="設定" onPress={() => router.push('/settings')}>
+            <Text variant="subhead" color="textMuted">
+              ⚙
+            </Text>
+          </IconButton>
+        }
+      />
 
       <FlatList
         data={rest}
