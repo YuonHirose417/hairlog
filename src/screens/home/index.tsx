@@ -28,7 +28,7 @@ export function Home() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const { visits, count, loading, reload } = useVisits();
+  const { visits, count, loading } = useVisits();
   const { isPro } = useEntitlement();
 
   // ヘッダーはリストに重なっているので、その実測の高さだけ中身を下げる。
@@ -57,7 +57,7 @@ export function Home() {
   }
 
   function renderCell({ item }: { item: VisitSummary }) {
-    return <VisitGridCell visit={item} width={cellWidth} onChanged={() => void reload()} />;
+    return <VisitGridCell visit={item} width={cellWidth} />;
   }
 
   return (
@@ -95,7 +95,7 @@ export function Home() {
               // key を記録の id にして、新しく保存されたときだけ再生させる。
               // ListHeaderComponent は仮想化リストの行ではないので entering を使ってよい
               <Animated.View key={latest.id} entering={heroEntrance}>
-                <HeroCard visit={latest} onChanged={() => void reload()} />
+                <HeroCard visit={latest} />
               </Animated.View>
             ) : null}
             {/* グリッドが空のときは見出しだけが浮くので出さない */}

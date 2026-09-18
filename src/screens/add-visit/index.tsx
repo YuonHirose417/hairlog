@@ -19,10 +19,12 @@ import {
   createVisit,
   distinctSalonNames,
   distinctStylistNames,
+  getVisit,
   lastVisit,
+  updateVisit,
 } from '@/lib/db';
 import { savePhoto } from '@/lib/photos';
-import { deleteVisitWithPhotos } from '@/lib/visits';
+import { deleteVisitWithPhotos, syncVisitPhotos } from '@/lib/visits';
 import { alertPermissionDenied, pickPhotos } from '@/lib/pick-photos';
 import { DateField } from '@/screens/add-visit/date-field';
 import { PhotoStrip } from '@/screens/add-visit/photo-strip';
@@ -34,8 +36,17 @@ import { PhotoStrip } from '@/screens/add-visit/photo-strip';
  * **入力の手数を増やす要素を足さない**（CLAUDE.md §7）。
  * 選択式の入力（チップ・プルダウン）は追加しないこと。候補チップは
  * 過去の入力を再利用するための補助であって、選択式入力ではない。
+ *
+ * **visitId を渡すと編集モードになる。** 既存の値を読み込み、写真の選択肢を
+ * 自動では出さず、保存は更新になる。
  */
-export function AddVisit() {
+export type AddVisitProps = {
+  /** 編集する記録の id。未指定なら新規作成 */
+  visitId?: string;
+};
+
+export function AddVisit({ visitId }: AddVisitProps) {
+  const editing = Boolean(visitId);
   const c = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -49,6 +60,13 @@ export function AddVisit() {
 
   const [salonOptions, setSalonOptions] = useState<string[]>([]);
   const [stylistOptions, setStylistOptions] = useState<string[]>([]);
+
+  /**
+   * 編集モードで読み込んだ時点の内容。
+   * 破棄の確認は**これとの差分**で判定する。新規と同じ「何か入力があるか」だと、
+   * 開いただけで必ず確認が出てしまう。
+   */
+  const [original, setOriginal] = useState<string | null>(null);
 
   // 開いた直後に一度だけ写真の選択肢を出す。StrictMode の二重実行も防ぐ
   const askedForPhotos = useRef(false);
@@ -67,26 +85,50 @@ export function AddVisit() {
 
   useEffect(() => {
     async function loadDefaults() {
-      const [previous, salons, stylists] = await Promise.all([
-        lastVisit(),
+      const [salons, stylists] = await Promise.all([
         distinctSalonNames(),
         distinctStylistNames(),
       ]);
-      // 前回の値を初期値にする。毎回打ち直さずに済むように
-      setSalonName(previous?.salonName ?? '');
-      setStylistName(previous?.stylistName ?? '');
       setSalonOptions(salons);
       setStylistOptions(stylists);
+
+      if (visitId) {
+        // 編集: その記録の値を入れる
+        const visit = await getVisit(visitId);
+        if (!visit) return;
+        setVisitedAt(new Date(visit.visitedAt));
+        setSalonName(visit.salonName ?? '');
+        setStylistName(visit.stylistName ?? '');
+        setMemo(visit.memo ?? '');
+        setUris(visit.photos.map((photo) => photo.uri));
+        setOriginal(
+          snapshot(
+            visit.visitedAt,
+            visit.salonName ?? '',
+            visit.stylistName ?? '',
+            visit.memo ?? '',
+            visit.photos.map((photo) => photo.uri)
+          )
+        );
+        return;
+      }
+
+      // 新規: 前回の値を初期値にする。毎回打ち直さずに済むように
+      const previous = await lastVisit();
+      setSalonName(previous?.salonName ?? '');
+      setStylistName(previous?.stylistName ?? '');
     }
     void loadDefaults();
-  }, []);
+  }, [visitId]);
 
   useEffect(() => {
+    // 編集では写真の選択肢を自動で出さない。既に写真がある状態で開くため
+    if (editing) return;
     if (askedForPhotos.current) return;
     askedForPhotos.current = true;
     // キャンセルされても画面は閉じない。メモだけの記録も書けるようにするため
     void addPhotos();
-  }, [addPhotos]);
+  }, [addPhotos, editing]);
 
   // 写真は必須。メモ・美容院名・担当者名は任意
   const hasPhotos = uris.length > 0;
@@ -96,8 +138,12 @@ export function AddVisit() {
     salonName.trim().length > 0 ||
     stylistName.trim().length > 0;
 
+  const current = snapshot(visitedAt.toISOString(), salonName, stylistName, memo, uris);
+  // 編集は読み込んだ内容からの差分、新規は何か入力があるかで判定する
+  const dirty = editing ? original !== null && current !== original : hasInput;
+
   function handleClose() {
-    if (!hasInput) {
+    if (!dirty) {
       router.back();
       return;
     }
@@ -119,18 +165,26 @@ export function AddVisit() {
     let createdId: string | null = null;
 
     try {
-      const visit = await createVisit({
+      const input = {
         visitedAt: visitedAt.toISOString(),
         salonName,
         stylistName,
         memo,
-      });
-      createdId = visit.id;
+      };
 
-      // 並べ替えた順にアプリ内へコピーする。先頭が代表写真になる
-      for (const uri of uris) {
-        const saved = await savePhoto(uri);
-        await addPhoto({ visitId: visit.id, uri: saved, takenAt: visit.visitedAt });
+      if (visitId) {
+        await updateVisit(visitId, input);
+        // 消えたもの・増えたもの・並び順をまとめて反映する
+        await syncVisitPhotos(visitId, uris);
+      } else {
+        const visit = await createVisit(input);
+        createdId = visit.id;
+
+        // 並べ替えた順にアプリ内へコピーする。先頭が代表写真になる
+        for (const uri of uris) {
+          const saved = await savePhoto(uri);
+          await addPhoto({ visitId: visit.id, uri: saved, takenAt: visit.visitedAt });
+        }
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -200,6 +254,17 @@ export function AddVisit() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+/** 破棄の確認に使う、内容の指紋 */
+function snapshot(
+  visitedAt: string,
+  salonName: string,
+  stylistName: string,
+  memo: string,
+  uris: string[]
+): string {
+  return JSON.stringify([visitedAt, salonName.trim(), stylistName.trim(), memo.trim(), uris]);
 }
 
 const styles = StyleSheet.create({

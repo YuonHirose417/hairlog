@@ -12,8 +12,6 @@ import type { VisitSummary } from '@/types/models';
 
 export type HeroCardProps = {
   visit: VisitSummary;
-  /** 削除されたあとに一覧を読み直す */
-  onChanged: () => void;
 };
 
 /**
@@ -27,10 +25,10 @@ export type HeroCardProps = {
  * 写真の下に置く。写真の色を邪魔しないため。
  *
  * - カード本体のタップ → 記録詳細
- * - カードの長押し     → メニュー（見せる / 削除）
+ * - カードの長押し     → メニュー（見せる）
  * - 「美容師さんに見せる」→ 見せるモード
  */
-export function HeroCard({ visit, onChanged }: HeroCardProps) {
+export function HeroCard({ visit }: HeroCardProps) {
   const c = useTheme();
   const router = useRouter();
   const { height } = useWindowDimensions();
@@ -59,7 +57,7 @@ export function HeroCard({ visit, onChanged }: HeroCardProps) {
   }
 
   function handleLongPress() {
-    showVisitActions(visit.id, { onShowcase: openShowcase, onDeleted: onChanged });
+    showVisitActions({ onShowcase: openShowcase });
   }
 
   async function handleToggleFavorite() {

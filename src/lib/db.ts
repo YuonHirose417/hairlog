@@ -435,6 +435,17 @@ export async function addPhoto(input: {
   return photo;
 }
 
+/**
+ * 並び順だけを更新する。
+ *
+ * 並べ替えのたびにファイルをコピーし直すのは無駄で、失敗すると写真を失う。
+ * 既存の写真は sort_order を振り直すだけにする。
+ */
+export async function updatePhotoOrder(id: string, sortOrder: number): Promise<void> {
+  const db = await initDatabase();
+  await db.runAsync('UPDATE photos SET sort_order = ? WHERE id = ?;', [sortOrder, id]);
+}
+
 /** DB の行だけを消す。ファイルの実体は lib/photos.ts 側で消すこと */
 export async function deletePhoto(id: string): Promise<void> {
   const db = await initDatabase();
