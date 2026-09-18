@@ -3,10 +3,10 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Section, SolidSurface, Text } from '@/components/ui';
-import { radius, screenPadding, spacing } from '@/constants/theme';
+import { border, radius, screenPadding, spacing } from '@/constants/theme';
 import { useTheme, useThemeScheme } from '@/hooks/use-theme';
 import { formatDateTime } from '@/lib/format';
 import {
@@ -29,6 +29,12 @@ function defaultAppointment(): Date {
  * 撮影リマインド。次の美容院の予約日時を登録すると、施術後に通知が届く。
  *
  * 記録追加の日付とは逆で、**未来しか選べない**（これから行く予約を登録するため）。
+ *
+ * **カレンダーの書体は変えられない。** DateTimePicker は iOS の UIDatePicker を
+ * そのまま出すネイティブ部品で、中の文字は OS が描いている。公開 prop に
+ * フォントを指定するものが無く、M PLUS Rounded 1c にするにはカレンダーを
+ * JS で自作するしかない（月送り・地域設定・アクセシビリティまで自前になる）。
+ * 色（accentColor）とライト/ダーク（themeVariant）だけは合わせてある。
  */
 export function Reminder() {
   const c = useTheme();
@@ -117,12 +123,25 @@ export function Reminder() {
   const showPicker = editing || !reminder;
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    // formSheet では上の inset が 0 になる。paddingTop: insets.top は全画面のときだけ
+    // 正しく、シートでは余計な余白が入るので SafeAreaView に任せる
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: c.background }]}>
+      {/* 区切り線でヘッダーと本文を分ける。無いと、下を通る文字と視覚的に溶ける */}
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: c.background, borderBottomColor: c.outlineSubtle },
+        ]}>
         <Button label="閉じる" variant="secondary" onPress={() => router.back()} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          // ネイティブのピッカーは月名をタップすると年月の選択が上へせり出す。
+          // 上に余白を取らないとヘッダーに重なる
+          paddingTop: spacing.lg,
+          paddingBottom: insets.bottom + spacing.xxl,
+        }}>
         <Section title="次の予約">
           {reminder && !editing ? (
             <Card>
@@ -161,7 +180,7 @@ export function Reminder() {
           </Section>
         ) : null}
 
-        <Section title="">
+        <View style={styles.actions}>
           {showPicker ? (
             <Button
               label={reminder ? 'この日時に変更' : 'この日時で登録'}
@@ -183,9 +202,9 @@ export function Reminder() {
               style={styles.cancelButton}
             />
           ) : null}
-        </Section>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -196,7 +215,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     paddingHorizontal: screenPadding,
-    paddingBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: border.hairline,
+  },
+  actions: {
+    paddingHorizontal: screenPadding,
   },
   note: {
     marginTop: spacing.xs,

@@ -20,6 +20,11 @@ export type DateFieldProps = {
  *
  * 画面に出す日付は常に formatDate()（2026.09.18）を通す。端末の暦設定に
  * 関わらずアプリ内の表記を西暦でそろえるため。
+ *
+ * **カレンダーの書体は変えられない。** DateTimePicker は iOS の UIDatePicker を
+ * そのまま出すネイティブ部品で、中の文字は OS が描いている。公開 prop に
+ * フォントを指定するものが無いため、ここだけシステムフォントになる。
+ * 色（accentColor）とライト/ダーク（themeVariant）だけは合わせてある。
  */
 export function DateField({ value, onChange }: DateFieldProps) {
   const c = useTheme();
