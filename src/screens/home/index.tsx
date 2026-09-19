@@ -65,10 +65,13 @@ export function Home() {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <BlurHeader
         title="hairlog"
+        // ホームだけロゴとして扱う。他の画面のヘッダーはこれまでどおり
+        logo
         onHeightChange={setHeaderHeight}
         right={
           <IconButton accessibilityLabel="設定" onPress={() => router.push('/settings')}>
-            <Text variant="subhead" color="textMuted">
+            {/* ロゴが大きいぶん歯車も上げて釣り合わせる。色は控えめなまま */}
+            <Text variant="title" color="textMuted">
               ⚙
             </Text>
           </IconButton>

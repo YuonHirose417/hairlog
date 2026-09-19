@@ -231,6 +231,15 @@ export const typography = {
     fontSize: fontSize.title,
     lineHeight: lineHeight.title,
   },
+  /**
+   * ホームのロゴ「hairlog」専用。アプリの顔として一番大きく太くする。
+   * 他の画面の見出しには使わない。
+   */
+  logo: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.display,
+    lineHeight: 34,
+  },
   /** 空状態など、ごく限られた場面の大見出し */
   display: {
     fontFamily: fontFamily.bold,
@@ -298,6 +307,21 @@ export const layout = {
   fabInset: spacing.lg,
   /** blur ヘッダーの高さ（セーフエリアを除く） */
   headerHeight: 52,
+  /** ホームだけロゴとして扱うので、そのぶん高くする */
+  homeHeaderHeight: 80,
+} as const;
+
+/**
+ * ホームのロゴ専用のトークン。
+ *
+ * **アクセント色を装飾に使ってよいのはここだけ。**（CLAUDE.md §10 の明示的な例外）
+ * 他の装飾へ広げないこと。イエローは主要操作のための色。
+ */
+export const logo = {
+  underlineHeight: 4,
+  /** 手で引いた線のような柔らかさを出す */
+  underlineRadius: 2,
+  underlineGap: spacing.xs,
 } as const;
 
 /** 無料プランで保存できる記録の上限 */

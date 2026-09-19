@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
-import { border, colors, layout, spacing } from '@/constants/theme';
+import { border, colors, layout, logo as logoTokens, spacing, typography } from '@/constants/theme';
 import { useTheme, useThemeScheme } from '@/hooks/use-theme';
 
 export type BlurHeaderProps = {
@@ -12,6 +12,11 @@ export type BlurHeaderProps = {
   left?: React.ReactNode;
   /** 右端に置く要素（♡ や共有など） */
   right?: React.ReactNode;
+  /**
+   * ホームだけ true にして、タイトルをロゴとして扱う。
+   * 大きく太い左寄せの文字と、その下にアクセント色の線を引く。
+   */
+  logo?: boolean;
   /**
    * 実測した高さを通知する。
    * 定数からの見積もり（セーフエリア + バー + 下線）は端末やフォントスケールで
@@ -31,7 +36,7 @@ export const BLUR_HEADER_HEIGHT = layout.headerHeight;
  * contentContainerStyle の paddingTop に足すこと。
  * BLUR_HEADER_HEIGHT は実測が来るまでの初期値としてだけ使う。
  */
-export function BlurHeader({ title, left, right, onHeightChange }: BlurHeaderProps) {
+export function BlurHeader({ title, left, right, logo = false, onHeightChange }: BlurHeaderProps) {
   const c = useTheme();
   const scheme = useThemeScheme();
   const insets = useSafeAreaInsets();
@@ -45,10 +50,27 @@ export function BlurHeader({ title, left, right, onHeightChange }: BlurHeaderPro
         styles.container,
         { paddingTop: insets.top, borderBottomColor: c.outlineSubtle },
       ]}>
-      <View style={styles.bar}>
-        <View style={styles.side}>{left}</View>
+      <View style={[styles.bar, logo && styles.barLogo]}>
+        {logo ? (
+          // 下線を文字の幅に合わせるため、入れ物を flex-start にして中で stretch させる
+          <View style={styles.logoBlock}>
+            <Text numberOfLines={1} style={typography.logo}>
+              {title}
+            </Text>
+            <View
+              style={[
+                styles.underline,
+                { backgroundColor: c.accent },
+              ]}
+            />
+          </View>
+        ) : null}
 
-        {title ? (
+        {logo ? null : <View style={styles.side}>{left}</View>}
+
+        {logo ? (
+          <View style={styles.spacer} />
+        ) : title ? (
           <Text variant="subhead" numberOfLines={1} style={styles.title}>
             {title}
           </Text>
@@ -76,6 +98,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
+  },
+  barLogo: {
+    height: layout.homeHeaderHeight,
+    paddingHorizontal: spacing.md,
+  },
+  logoBlock: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    flexShrink: 1,
+    // 文字と線の間を空ける。上の余白と合わせてロゴが窮屈に見えないようにする
+    paddingTop: spacing.md,
+  },
+  underline: {
+    alignSelf: 'stretch',
+    height: logoTokens.underlineHeight,
+    borderRadius: logoTokens.underlineRadius,
+    marginTop: logoTokens.underlineGap,
+  },
+  spacer: {
+    flex: 1,
   },
   side: {
     minWidth: layout.minTouchTarget,
