@@ -1,12 +1,14 @@
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, IconButton, Text } from '@/components/ui';
 import { layout, screenPadding, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getVisit, toggleFavorite } from '@/lib/db';
+import { savePhotoToLibrary } from '@/lib/export';
 import { formatDate, formatSalonLine } from '@/lib/format';
 import { showDetailActions } from '@/screens/visit-detail/detail-actions';
 import { DetailPhotoPager } from '@/screens/visit-detail/photo-pager';
@@ -32,6 +34,8 @@ export function VisitDetail({ id }: VisitDetailProps) {
 
   const [visit, setVisit] = useState<VisitWithPhotos | null>(null);
   const [loaded, setLoaded] = useState(false);
+  /** 表示中の写真。⋯ から1枚だけ保存するときの対象になる */
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const reload = useCallback(async () => {
     try {
@@ -56,6 +60,46 @@ export function VisitDetail({ id }: VisitDetailProps) {
 
   function openEdit() {
     router.push({ pathname: '/add', params: { id } });
+  }
+
+  /** いま表示している1枚だけをカメラロールへ保存する */
+  function handleSavePhoto() {
+    const photo = visit?.photos[currentIndex];
+    if (!photo) {
+      Alert.alert('保存できる写真がありません');
+      return;
+    }
+
+    // 二重保存になる場合は先に断る。カメラロール側で消した場合に備えて選択肢は残す
+    if (photo.savedToLibraryAt) {
+      Alert.alert('この写真は保存済みです', 'もう一度カメラロールに追加しますか？', [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: 'もう一度追加する', onPress: () => void runSavePhoto(photo) },
+      ]);
+      return;
+    }
+
+    void runSavePhoto(photo);
+  }
+
+  async function runSavePhoto(photo: VisitWithPhotos['photos'][number]) {
+    const result = await savePhotoToLibrary(photo);
+
+    if (result.ok) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Alert.alert('カメラロールに保存しました', '写真アプリの「hairlog」アルバムで確認できます。');
+      await reload();
+      return;
+    }
+
+    if (result.reason === 'denied') {
+      Alert.alert(
+        '写真へのアクセスが許可されていません',
+        'iPhone の「設定」→「hairlog」→「写真」から「写真の追加のみ」を許可すると保存できます。'
+      );
+      return;
+    }
+    Alert.alert('保存できませんでした', 'もう一度お試しください。');
   }
 
   async function handleToggleFavorite() {
@@ -104,7 +148,11 @@ export function VisitDetail({ id }: VisitDetailProps) {
           <IconButton
             accessibilityLabel="この記録の操作"
             onPress={() =>
-              showDetailActions(id, { onEdit: openEdit, onDeleted: () => router.back() })
+              showDetailActions(id, {
+                onSavePhoto: handleSavePhoto,
+                onEdit: openEdit,
+                onDeleted: () => router.back(),
+              })
             }>
             <Text variant="subhead" color="textMuted">
               ⋯
@@ -120,6 +168,7 @@ export function VisitDetail({ id }: VisitDetailProps) {
             width={width}
             maxHeight={height * PHOTO_MAX_RATIO}
             onPress={openShowcase}
+            onIndexChange={setCurrentIndex}
           />
         ) : null}
 

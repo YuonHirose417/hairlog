@@ -22,6 +22,12 @@ export type Photo = {
   uri: string;
   takenAt: string;
   sortOrder: number;
+  /**
+   * カメラロールへ保存した日時。未保存なら null。
+   * 二重保存を避けるために使う。**カメラロール側で消されても検知できない**
+   * （読み取り権限を求めていないため）。
+   */
+  savedToLibraryAt: string | null;
 };
 
 /** 写真を1枚以上伴った来店記録。一覧・詳細で使う */

@@ -11,23 +11,35 @@ import { ActionSheetIOS, Alert, Platform } from 'react-native';
 import { deleteVisitWithPhotos } from '@/lib/visits';
 
 export type DetailActionHandlers = {
+  /** いま表示している写真1枚をカメラロールへ保存する */
+  onSavePhoto: () => void;
   onEdit: () => void;
   /** 削除が終わったあと。呼び出し側で画面を閉じる */
   onDeleted: () => void;
 };
 
+/**
+ * 並びは **保存 → 編集 → 削除**。
+ * 取り消せない削除を一番下に置き、誤って押しにくくする。
+ */
 export function showDetailActions(visitId: string, handlers: DetailActionHandlers) {
   const choose = (index: number) => {
-    if (index === 0) handlers.onEdit();
-    if (index === 1) confirmDelete(visitId, handlers.onDeleted);
+    if (index === 0) handlers.onSavePhoto();
+    if (index === 1) handlers.onEdit();
+    if (index === 2) confirmDelete(visitId, handlers.onDeleted);
   };
 
   if (Platform.OS === 'ios') {
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: ['この記録を編集', 'この記録を削除', 'キャンセル'],
-        destructiveButtonIndex: 1,
-        cancelButtonIndex: 2,
+        options: [
+          'この写真をカメラロールに保存',
+          'この記録を編集',
+          'この記録を削除',
+          'キャンセル',
+        ],
+        destructiveButtonIndex: 2,
+        cancelButtonIndex: 3,
       },
       choose
     );
@@ -35,8 +47,9 @@ export function showDetailActions(visitId: string, handlers: DetailActionHandler
   }
 
   Alert.alert('この記録', undefined, [
-    { text: 'この記録を編集', onPress: () => choose(0) },
-    { text: 'この記録を削除', style: 'destructive', onPress: () => choose(1) },
+    { text: 'この写真をカメラロールに保存', onPress: () => choose(0) },
+    { text: 'この記録を編集', onPress: () => choose(1) },
+    { text: 'この記録を削除', style: 'destructive', onPress: () => choose(2) },
     { text: 'キャンセル', style: 'cancel' },
   ]);
 }

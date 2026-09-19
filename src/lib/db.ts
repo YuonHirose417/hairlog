@@ -21,7 +21,7 @@ import type {
 const DATABASE_NAME = 'hairlog.db';
 
 /** マイグレーションを1つ足すたびにこの値を上げ、runMigrations に case を追加する */
-const LATEST_SCHEMA_VERSION = 1;
+const LATEST_SCHEMA_VERSION = 2;
 
 // -----------------------------------------------------------------------------
 // 接続とマイグレーション
@@ -98,6 +98,12 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
     version = 1;
   }
 
+  if (version === 1) {
+    // ADD COLUMN は既存の行を壊さない。すでにある写真は NULL（＝未保存）になる
+    await db.execAsync('ALTER TABLE photos ADD COLUMN saved_to_library_at TEXT;');
+    version = 2;
+  }
+
   // PRAGMA はプレースホルダを受け付けないため、定数を直接埋め込む
   await db.execAsync(`PRAGMA user_version = ${version};`);
 }
@@ -131,6 +137,7 @@ type PhotoRow = {
   uri: string;
   taken_at: string;
   sort_order: number;
+  saved_to_library_at: string | null;
 };
 
 type ReminderRow = {
@@ -162,6 +169,7 @@ function mapPhoto(row: PhotoRow): Photo {
     uri: row.uri,
     takenAt: row.taken_at,
     sortOrder: row.sort_order,
+    savedToLibraryAt: row.saved_to_library_at,
   };
 }
 
@@ -425,6 +433,7 @@ export async function addPhoto(input: {
     uri: input.uri,
     takenAt: input.takenAt ?? now(),
     sortOrder: next?.next_order ?? 0,
+    savedToLibraryAt: null,
   };
 
   await db.runAsync(
@@ -450,6 +459,36 @@ export async function updatePhotoOrder(id: string, sortOrder: number): Promise<v
 export async function deletePhoto(id: string): Promise<void> {
   const db = await initDatabase();
   await db.runAsync('DELETE FROM photos WHERE id = ?;', [id]);
+}
+
+/** カメラロールへ保存したことを記録する。二重保存を避けるために使う */
+export async function markPhotoSaved(id: string): Promise<void> {
+  const db = await initDatabase();
+  await db.runAsync('UPDATE photos SET saved_to_library_at = ? WHERE id = ?;', [now(), id]);
+}
+
+/** まだカメラロールへ保存していない写真の枚数 */
+export async function countUnsavedPhotos(): Promise<number> {
+  const db = await initDatabase();
+  const row = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM photos WHERE saved_to_library_at IS NULL;'
+  );
+  return row?.count ?? 0;
+}
+
+/**
+ * カメラロールへの保存対象を並び順で返す。
+ * @param onlyUnsaved true なら未保存のものだけ。false なら全件（保存し直すとき）
+ */
+export async function listPhotosForBackup(onlyUnsaved: boolean): Promise<Photo[]> {
+  const db = await initDatabase();
+  const rows = await db.getAllAsync<PhotoRow>(
+    `SELECT p.* FROM photos p
+       JOIN visits v ON v.id = p.visit_id
+      ${onlyUnsaved ? 'WHERE p.saved_to_library_at IS NULL' : ''}
+      ORDER BY v.visited_at ASC, p.sort_order ASC;`
+  );
+  return rows.map(mapPhoto);
 }
 
 /** 全写真の相対パス。書き出しや孤立ファイルの掃除に使う */

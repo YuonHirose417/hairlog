@@ -93,7 +93,8 @@ src/
 ```sql
 visits          id, visited_at, salon_name, stylist_name, memo, is_favorite,
                 created_at, updated_at
-photos          id, visit_id (ON DELETE CASCADE), uri, taken_at, sort_order
+photos          id, visit_id (ON DELETE CASCADE), uri, taken_at, sort_order,
+                saved_to_library_at
 photo_reminders id, appointment_at, notification_id, notification_id_evening,
                 cancelled_at, created_at
 ```
@@ -102,6 +103,7 @@ photo_reminders id, appointment_at, notification_id, notification_id_evening,
 - 日時はすべて ISO8601 の TEXT
 - `is_favorite` は INTEGER（0/1）
 - `photos.uri` は `Paths.document` からの相対パス
+- `photos.saved_to_library_at` はカメラロールへ保存した日時。未保存なら NULL。二重保存を避けるために使う。**カメラロール側で消されても検知できない**（読み取り権限を求めていないため）ので、設定画面に「もう一度すべて保存」の逃げ道を置いている
 - マイグレーションは `PRAGMA user_version` で管理する
 - 初期化時に `PRAGMA foreign_keys = ON` と `journal_mode = WAL` を設定する
 - **`deleteVisit` は CASCADE で photos 行を消すが、ファイル実体は自動で消えない。** 削除前に `listPhotos` してファイルも消すこと

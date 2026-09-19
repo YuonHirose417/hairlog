@@ -16,8 +16,9 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import * as Sharing from 'expo-sharing';
 
-import { exportAll } from '@/lib/db';
+import { exportAll, listPhotosForBackup, markPhotoSaved } from '@/lib/db';
 import { resolvePhotoUri } from '@/lib/photos';
+import type { Photo } from '@/types/models';
 
 /** カメラロールでまとめる先 */
 const ALBUM_NAME = 'hairlog';
@@ -32,6 +33,8 @@ export type ShareResult =
 export type SavePhotosResult =
   | { ok: true; saved: number; failed: number; total: number }
   | { ok: false; reason: 'empty' | 'denied' | 'failed' };
+
+export type SaveOneResult = { ok: true } | { ok: false; reason: 'denied' | 'failed' };
 
 // -----------------------------------------------------------------------------
 // 記録の書き出し
@@ -125,41 +128,66 @@ async function putInAlbum(asset: MediaLibrary.Asset) {
   }
 }
 
+/** 書き込み専用の許可。読み取り権限までは求めない */
+async function ensureLibraryPermission(): Promise<boolean> {
+  const permission = await MediaLibrary.requestPermissionsAsync(true);
+  return permission.granted;
+}
+
+/** 1枚をカメラロールへ入れ、保存済みとして記録する */
+async function saveOne(photo: Photo): Promise<boolean> {
+  try {
+    const asset = await MediaLibrary.createAssetAsync(resolvePhotoUri(photo.uri));
+    await putInAlbum(asset);
+    await markPhotoSaved(photo.id);
+    return true;
+  } catch (error) {
+    console.log('[hairlog] 写真を保存できませんでした', photo.uri, error);
+    return false;
+  }
+}
+
+/** 記録詳細から、いま見ている1枚だけを保存する */
+export async function savePhotoToLibrary(photo: Photo): Promise<SaveOneResult> {
+  try {
+    if (!(await ensureLibraryPermission())) return { ok: false, reason: 'denied' };
+    return (await saveOne(photo)) ? { ok: true } : { ok: false, reason: 'failed' };
+  } catch (error) {
+    console.error('[hairlog] 写真の保存に失敗しました', error);
+    return { ok: false, reason: 'failed' };
+  }
+}
+
 /**
- * すべての写真をカメラロールへ保存する。
+ * まとめてカメラロールへ保存する（バックアップ用）。
  *
  * 1枚ずつ await するので画面が固まらない。進捗は**1枚ごと**に返す
  * （毎フレームではないので、状態更新の回数は写真の枚数と同じ）。
+ *
+ * @param onlyUnsaved true なら未保存のぶんだけ。false なら全件を保存し直す
+ *   （カメラロール側で消してしまった場合の逃げ道）
  */
 export async function savePhotosToLibrary(
+  onlyUnsaved: boolean,
   onProgress: (done: number, total: number) => void
 ): Promise<SavePhotosResult> {
   try {
-    const payload = await exportAll();
-    const uris = payload.visits.flatMap((visit) => visit.photos.map((photo) => photo.uri));
-    if (uris.length === 0) return { ok: false, reason: 'empty' };
+    const photos = await listPhotosForBackup(onlyUnsaved);
+    if (photos.length === 0) return { ok: false, reason: 'empty' };
 
-    // 書き込み専用。読み取り権限までは求めない
-    const permission = await MediaLibrary.requestPermissionsAsync(true);
-    if (!permission.granted) return { ok: false, reason: 'denied' };
+    if (!(await ensureLibraryPermission())) return { ok: false, reason: 'denied' };
 
     let saved = 0;
     let failed = 0;
 
-    for (const uri of uris) {
-      try {
-        const asset = await MediaLibrary.createAssetAsync(resolvePhotoUri(uri));
-        await putInAlbum(asset);
-        saved += 1;
-      } catch (error) {
-        // 1枚失敗しても残りは保存する
-        console.log('[hairlog] 写真を保存できませんでした', uri, error);
-        failed += 1;
-      }
-      onProgress(saved + failed, uris.length);
+    for (const photo of photos) {
+      // 1枚失敗しても残りは保存する
+      if (await saveOne(photo)) saved += 1;
+      else failed += 1;
+      onProgress(saved + failed, photos.length);
     }
 
-    return { ok: true, saved, failed, total: uris.length };
+    return { ok: true, saved, failed, total: photos.length };
   } catch (error) {
     console.error('[hairlog] 写真の保存に失敗しました', error);
     return { ok: false, reason: 'failed' };

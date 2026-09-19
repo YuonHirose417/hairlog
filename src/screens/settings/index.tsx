@@ -9,7 +9,7 @@ import { Button, Card, Divider, Section, Text } from '@/components/ui';
 import { FREE_VISIT_LIMIT, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
 import { useTheme } from '@/hooks/use-theme';
-import { countVisits, deleteAllVisits, listAllPhotoUris } from '@/lib/db';
+import { countUnsavedPhotos, countVisits, deleteAllVisits, listAllPhotoUris } from '@/lib/db';
 import { savePhotosToLibrary, shareRecords } from '@/lib/export';
 import { cancelReminder } from '@/lib/notifications';
 import { removeOrphanedPhotos } from '@/lib/photos';
@@ -27,12 +27,16 @@ export function Settings() {
   const { isPro } = useEntitlement();
 
   const [count, setCount] = useState(0);
+  /** まだカメラロールへ保存していない枚数。開くたび数え直す */
+  const [unsaved, setUnsaved] = useState(0);
   const [sharing, setSharing] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      setCount(await countVisits());
+      const [visits, pending] = await Promise.all([countVisits(), countUnsavedPhotos()]);
+      setCount(visits);
+      setUnsaved(pending);
     } catch (error) {
       console.error('[hairlog] 件数の取得に失敗しました', error);
     }
@@ -62,12 +66,49 @@ export function Settings() {
     }
   }
 
-  async function handleSavePhotos() {
+  /**
+   * 全件を一括で保存する前に、必ず枚数を伝えて確認する。
+   * 意図せずカメラロールが写真で埋まるのを防ぐため。
+   */
+  function handleSavePhotos() {
     if (progress) return;
+
+    if (count === 0) {
+      Alert.alert('保存できる写真がまだありません');
+      return;
+    }
+
+    if (unsaved > 0) {
+      Alert.alert(
+        `${unsaved}枚をカメラロールに追加しますか？`,
+        '写真アプリの「hairlog」アルバムに追加されます。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          { text: '追加する', onPress: () => void runSavePhotos(true) },
+        ]
+      );
+      return;
+    }
+
+    // すべて保存済み。カメラロール側で消してしまった場合の逃げ道を用意する
+    Alert.alert(
+      'すべての写真は保存済みです',
+      'もう一度カメラロールに追加しますか？（写真アプリから削除してしまった場合に使えます）',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: 'もう一度保存する', onPress: () => void runSavePhotos(false) },
+      ]
+    );
+  }
+
+  async function runSavePhotos(onlyUnsaved: boolean) {
     setProgress({ done: 0, total: 0 });
 
-    const result = await savePhotosToLibrary((done, total) => setProgress({ done, total }));
+    const result = await savePhotosToLibrary(onlyUnsaved, (done, total) =>
+      setProgress({ done, total })
+    );
     setProgress(null);
+    await reload();
 
     if (result.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -172,13 +213,22 @@ export function Settings() {
           />
 
           <Button
-            label="写真をカメラロールに保存"
+            label="すべての写真をカメラロールに保存"
             variant="secondary"
             fullWidth
             loading={saving}
-            onPress={() => void handleSavePhotos()}
+            onPress={handleSavePhotos}
             style={styles.action}
           />
+
+          <Text variant="caption" color="textMuted" style={styles.note}>
+            {unsaved > 0
+              ? `バックアップ用です。カメラロールに${unsaved}枚追加されます。`
+              : 'バックアップ用です。すべての写真は保存済みです。'}
+          </Text>
+          <Text variant="caption" color="textFaint" style={styles.hint}>
+            1枚だけ保存したいときは、記録を開いて「⋯」から保存できます。
+          </Text>
 
           {progress && progress.total > 0 ? (
             <Text variant="caption" color="textMuted" style={styles.note}>
@@ -259,6 +309,9 @@ const styles = StyleSheet.create({
   },
   note: {
     marginTop: spacing.sm,
+  },
+  hint: {
+    marginTop: spacing.xs,
   },
   action: {
     marginTop: spacing.md,

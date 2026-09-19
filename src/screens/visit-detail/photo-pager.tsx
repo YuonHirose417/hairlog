@@ -18,6 +18,8 @@ export type PhotoPagerProps = {
   maxHeight: number;
   /** 写真をタップしたとき。見せるモードへ進む */
   onPress: () => void;
+  /** 表示中の写真が変わったとき。親が「いま見ている1枚」を知るために使う */
+  onIndexChange?: (index: number) => void;
 };
 
 /**
@@ -28,11 +30,19 @@ export type PhotoPagerProps = {
  * 枚数表示だけで、1つにすると分岐だらけになる。
  * 拡大のジェスチャを持たないぶん、こちらははるかに単純に書ける。
  */
-export function DetailPhotoPager({ photos, width, maxHeight, onPress }: PhotoPagerProps) {
+export function DetailPhotoPager({
+  photos,
+  width,
+  maxHeight,
+  onPress,
+  onIndexChange,
+}: PhotoPagerProps) {
   const [index, setIndex] = useState(0);
 
   function handleMomentumEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    setIndex(Math.round(event.nativeEvent.contentOffset.x / width));
+    const next = Math.round(event.nativeEvent.contentOffset.x / width);
+    setIndex(next);
+    onIndexChange?.(next);
   }
 
   return (
