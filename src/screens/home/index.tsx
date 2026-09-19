@@ -51,7 +51,7 @@ export function Home() {
   function handleAdd() {
     const overFreeLimit = !isPro && count >= FREE_VISIT_LIMIT;
     if (overFreeLimit && !DEV_SKIP_PAYWALL) {
-      router.push('/settings/paywall');
+      router.push('/settings/paywall?from=add');
       return;
     }
     router.push('/add');
@@ -105,7 +105,7 @@ export function Home() {
           <View>
             {__DEV__ && DEV_SKIP_PAYWALL ? (
               <Text variant="caption" color="danger" style={styles.devNotice}>
-                無料枠の判定をスキップ中（constants/dev.ts）
+                有料機能の判定をスキップ中（constants/dev.ts）
               </Text>
             ) : null}
             {latest ? (

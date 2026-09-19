@@ -45,6 +45,12 @@ export function isPurchasesConfigured(): boolean {
   return readKey() !== null;
 }
 
+/**
+ * configure() で読み込んだ SDK を保持する。以降の呼び出しで import をやり直さない。
+ * 初期化に成功したときだけ入るので、null なら課金は使えない。
+ */
+let sdk: typeof import('react-native-purchases').default | null = null;
+
 let status: PurchasesStatus | null = null;
 let initPromise: Promise<PurchasesStatus> | null = null;
 
@@ -97,6 +103,7 @@ async function configure(): Promise<PurchasesStatus> {
 
   try {
     Purchases.configure({ apiKey: key });
+    sdk = Purchases;
     return { available: true };
   } catch (error) {
     return {
@@ -119,4 +126,145 @@ export function describePurchasesStatus(value: PurchasesStatus | null): string {
     'unsupported-platform': '無効（iOS 以外）',
   };
   return label[value.reason];
+}
+
+// -----------------------------------------------------------------------------
+// 商品の取得・購入・復元
+//
+// ここから下も **例外を投げない**。呼び出し側（hooks/use-entitlement.ts）は
+// 結果オブジェクトだけを見て UI を出し分ける。
+// -----------------------------------------------------------------------------
+
+/** RevenueCat の Entitlement 識別子。これが有効なら買い切り済み */
+const ENTITLEMENT_ID = 'pro';
+/** Offering 識別子。current が空だったときの取りこぼし防止に使う */
+const OFFERING_ID = 'default';
+/** 買い切りパッケージの識別子 */
+const PACKAGE_ID = '$rc_lifetime';
+/**
+ * 購入シートをユーザーが閉じたときのエラーコード（PURCHASES_ERROR_CODE）。
+ * enum を静的 import できないため値で持つ。
+ */
+const CANCELLED_CODE = '1';
+
+/** 使える状態の SDK を返す。使えないなら null（例外は投げない） */
+async function getSdk() {
+  await initPurchases();
+  return sdk;
+}
+
+export type ProOffer = {
+  /** RevenueCat から来た表示価格。「¥400」など。**自前で組み立てないこと** */
+  priceString: string;
+  /** デバッグ表示用 */
+  packageId: string;
+};
+
+export type PurchaseResult =
+  | { ok: true; isPro: boolean }
+  /** 購入シートを閉じただけ。**エラー扱いにしない** */
+  | { ok: false; reason: 'cancelled' }
+  | { ok: false; reason: 'unavailable' | 'no-product' | 'failed'; message: string };
+
+function isCancelled(error: unknown): boolean {
+  const e = error as { code?: unknown; userCancelled?: unknown };
+  // userCancelled は deprecated だが、古い経路のために両方見る
+  return e?.code === CANCELLED_CODE || e?.userCancelled === true;
+}
+
+/** 画面にそのまま出せる一文にする。SDK の英語メッセージは最後の手段 */
+function describeError(error: unknown): string {
+  const e = error as { message?: string };
+  return e?.message ?? '通信の状態を確かめて、もう一度お試しください。';
+}
+
+/** entitlement 'pro' が有効か。課金が使えない環境では常に false */
+export async function fetchIsPro(): Promise<boolean> {
+  const purchases = await getSdk();
+  if (purchases === null) return false;
+
+  try {
+    const info = await purchases.getCustomerInfo();
+    return info.entitlements.active[ENTITLEMENT_ID] != null;
+  } catch (error) {
+    // 通信できないだけで有料機能を失うのは避けたいが、端末内に真実は無いので
+    // false に倒す。復元ボタンで戻せる
+    console.log('[hairlog] 購入状態の取得に失敗しました', describeError(error));
+    return false;
+  }
+}
+
+/** 買い切りパッケージを探す。見つからなければ null */
+async function findPackage() {
+  const purchases = await getSdk();
+  if (purchases === null) return null;
+
+  const offerings = await purchases.getOfferings();
+  // ダッシュボードで current を切り替えても拾えるよう、両方を見る
+  const offering = offerings.current ?? offerings.all[OFFERING_ID] ?? null;
+  if (offering === null) return null;
+
+  return (
+    offering.lifetime ??
+    offering.availablePackages.find((item) => item.identifier === PACKAGE_ID) ??
+    offering.availablePackages[0] ??
+    null
+  );
+}
+
+/** 購入画面に出す表示価格。取得できなければ null */
+export async function fetchProOffer(): Promise<ProOffer | null> {
+  try {
+    const pkg = await findPackage();
+    if (pkg === null) return null;
+
+    return { priceString: pkg.product.priceString, packageId: pkg.identifier };
+  } catch (error) {
+    console.log('[hairlog] 商品の取得に失敗しました', describeError(error));
+    return null;
+  }
+}
+
+export async function purchasePro(): Promise<PurchaseResult> {
+  const purchases = await getSdk();
+  if (purchases === null) {
+    return { ok: false, reason: 'unavailable', message: describePurchasesStatus(status) };
+  }
+
+  try {
+    const pkg = await findPackage();
+    if (pkg === null) {
+      return {
+        ok: false,
+        reason: 'no-product',
+        message: '商品を取得できませんでした。時間をおいてもう一度お試しください。',
+      };
+    }
+
+    const result = await purchases.purchasePackage(pkg);
+    return { ok: true, isPro: result.customerInfo.entitlements.active[ENTITLEMENT_ID] != null };
+  } catch (error) {
+    if (isCancelled(error)) return { ok: false, reason: 'cancelled' };
+    return { ok: false, reason: 'failed', message: describeError(error) };
+  }
+}
+
+/**
+ * 購入を復元する。
+ * **購入が見つからないのは失敗ではない**（{ ok: true, isPro: false }）。
+ * 画面側で「購入が見つかりませんでした」と案内する。
+ */
+export async function restorePro(): Promise<PurchaseResult> {
+  const purchases = await getSdk();
+  if (purchases === null) {
+    return { ok: false, reason: 'unavailable', message: describePurchasesStatus(status) };
+  }
+
+  try {
+    const info = await purchases.restorePurchases();
+    return { ok: true, isPro: info.entitlements.active[ENTITLEMENT_ID] != null };
+  } catch (error) {
+    if (isCancelled(error)) return { ok: false, reason: 'cancelled' };
+    return { ok: false, reason: 'failed', message: describeError(error) };
+  }
 }

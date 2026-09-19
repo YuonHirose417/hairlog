@@ -1,5 +1,9 @@
-import { Stub } from '@/screens/stub';
+import { useLocalSearchParams } from 'expo-router';
+
+import { Paywall } from '@/screens/paywall';
 
 export default function PaywallScreen() {
-  return <Stub title="購入画面" />;
+  const { from } = useLocalSearchParams<{ from?: string }>();
+
+  return <Paywall from={from === 'add' ? 'add' : 'settings'} />;
 }

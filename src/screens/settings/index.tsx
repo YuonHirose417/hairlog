@@ -2,10 +2,11 @@ import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Card, Divider, Section, Text } from '@/components/ui';
+import { Button, Card, LegalLinks, Section, Text } from '@/components/ui';
+import { DEV_SKIP_PAYWALL } from '@/constants/dev';
 import { FREE_VISIT_LIMIT, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
 import { useTheme } from '@/hooks/use-theme';
@@ -48,8 +49,19 @@ export function Settings() {
     }, [reload])
   );
 
+  /**
+   * 書き出しは有料機能（CLAUDE.md §9）。未購入なら購入画面へ送る。
+   * 判定は use-entitlement の isPro に任せ、ここで RevenueCat を触らない。
+   */
+  function requirePro(): boolean {
+    if (isPro || DEV_SKIP_PAYWALL) return true;
+    router.push('/settings/paywall?from=settings');
+    return false;
+  }
+
   async function handleShareRecords() {
     if (sharing) return;
+    if (!requirePro()) return;
     setSharing(true);
     try {
       const result = await shareRecords();
@@ -72,6 +84,7 @@ export function Settings() {
    */
   function handleSavePhotos() {
     if (progress) return;
+    if (!requirePro()) return;
 
     if (count === 0) {
       Alert.alert('保存できる写真がまだありません');
@@ -177,11 +190,9 @@ export function Settings() {
     }
   }
 
-  function showComingSoon() {
-    Alert.alert('準備中です', '公開後にこちらから開けるようになります。');
-  }
-
   const saving = progress !== null;
+  /** 書き出しは有料。未購入なら鍵つきで見せ、押したら購入画面へ送る */
+  const locked = !isPro && !DEV_SKIP_PAYWALL;
 
   return (
     <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top }]}>
@@ -208,6 +219,7 @@ export function Settings() {
             sink
             fullWidth
             loading={sharing}
+            leading={locked ? <Text color="onAccent">🔒</Text> : undefined}
             onPress={() => void handleShareRecords()}
             style={styles.action}
           />
@@ -217,14 +229,17 @@ export function Settings() {
             variant="secondary"
             fullWidth
             loading={saving}
+            leading={locked ? <Text>🔒</Text> : undefined}
             onPress={handleSavePhotos}
             style={styles.action}
           />
 
           <Text variant="caption" color="textMuted" style={styles.note}>
-            {unsaved > 0
-              ? `バックアップ用です。カメラロールに${unsaved}枚追加されます。`
-              : 'バックアップ用です。すべての写真は保存済みです。'}
+            {locked
+              ? '書き出しは購入すると使えます。'
+              : unsaved > 0
+                ? `バックアップ用です。カメラロールに${unsaved}枚追加されます。`
+                : 'バックアップ用です。すべての写真は保存済みです。'}
           </Text>
           <Text variant="caption" color="textFaint" style={styles.hint}>
             1枚だけ保存したいときは、記録を開いて「⋯」から保存できます。
@@ -246,31 +261,10 @@ export function Settings() {
         </Section>
 
         <Section title="アプリについて">
-          <Card flat>
-            <Pressable
-              accessibilityRole="button"
-              onPress={showComingSoon}
-              style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-              <Text variant="body">利用規約</Text>
-              <Text variant="caption" color="textMuted">
-                準備中
-              </Text>
-            </Pressable>
+          {/* 購入画面と同じ部品を使う。文面を2箇所に散らさない */}
+          <LegalLinks />
 
-            <Divider />
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={showComingSoon}
-              style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-              <Text variant="body">プライバシーポリシー</Text>
-              <Text variant="caption" color="textMuted">
-                準備中
-              </Text>
-            </Pressable>
-
-            <Divider />
-
+          <Card flat style={styles.action}>
             <View style={styles.row}>
               <Text variant="body">バージョン</Text>
               <Text variant="caption" color="textMuted">
@@ -322,7 +316,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
   },
-  pressed: { opacity: 0.6 },
   dangerZone: {
     paddingHorizontal: spacing.md,
   },

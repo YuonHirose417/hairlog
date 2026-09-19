@@ -151,7 +151,11 @@ export default function RootLayout() {
           <Stack.Screen name="add/index" options={{ presentation: 'fullScreenModal' }} />
           {/* 設定は階層的な画面なのでシートにせず普通に push する */}
           <Stack.Screen name="settings/index" />
-          <Stack.Screen name="settings/paywall" options={{ presentation: 'formSheet' }} />
+          {/* 購入画面は伝えることが多いので全画面。シートでは内容が窮屈になる */}
+          <Stack.Screen
+            name="settings/paywall"
+            options={{ presentation: 'fullScreenModal' }}
+          />
           <Stack.Screen name="reminder" options={{ presentation: 'formSheet' }} />
         </Stack>
       </SafeAreaProvider>
