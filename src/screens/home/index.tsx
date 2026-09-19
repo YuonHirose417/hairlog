@@ -69,9 +69,12 @@ export function Home() {
         logo
         onHeightChange={setHeaderHeight}
         right={
-          <IconButton accessibilityLabel="設定" onPress={() => router.push('/settings')}>
-            {/* ロゴが大きいぶん歯車も上げて釣り合わせる。色は控えめなまま */}
-            <Text variant="title" color="textMuted">
+          <IconButton
+            accessibilityLabel="設定"
+            size="large"
+            onPress={() => router.push('/settings')}>
+            {/* ロゴと同じ大きさにそろえる。色は控えめなままでロゴより前に出さない */}
+            <Text variant="display" color="textMuted">
               ⚙
             </Text>
           </IconButton>

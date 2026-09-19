@@ -16,6 +16,12 @@ export type IconButtonProps = {
   onPress?: (event: GestureResponderEvent) => void;
   /** 読み上げ用のラベル。必須 */
   accessibilityLabel: string;
+  /**
+   * 箱の大きさ。既定は最小タップ領域（44）。
+   * display(28px) のような大きな文字を入れるときは large（48）にする。
+   * **どちらも 44px 以上**なので、タップ領域の下限は常に満たす。
+   */
+  size?: 'default' | 'large';
   /** 丸い下地を敷く。写真の上に置くときに使う */
   filled?: boolean;
   disabled?: boolean;
@@ -28,6 +34,7 @@ export function IconButton({
   children,
   onPress,
   accessibilityLabel,
+  size = 'default',
   filled = false,
   disabled = false,
   haptic = true,
@@ -53,6 +60,7 @@ export function IconButton({
       hitSlop={8}
       style={({ pressed }) => [
         styles.base,
+        size === 'large' && styles.large,
         filled && { backgroundColor: c.surfaceSunken },
         pressed && styles.pressed,
         disabled && styles.disabled,
@@ -70,6 +78,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  large: {
+    width: layout.iconButtonLarge,
+    height: layout.iconButtonLarge,
   },
   pressed: { opacity: 0.6 },
   disabled: { opacity: 0.4 },

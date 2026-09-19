@@ -301,6 +301,8 @@ export const layout = {
   heroMaxHeightRatio: 0.44,
   /** タップ領域の最小サイズ */
   minTouchTarget: 44,
+  /** 大きめのアイコンボタン。display(28px) の文字を入れても窮屈にならない */
+  iconButtonLarge: 48,
   /** ＋ボタンの直径 */
   fabSize: 60,
   /** ＋ボタンの下端と画面下（セーフエリア）の間隔 */
