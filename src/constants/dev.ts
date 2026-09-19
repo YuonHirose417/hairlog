@@ -12,4 +12,4 @@
  * 開発が進められなくなるため。書き出しも同じ理由で通す。
  * 課金導線を確認したいときは false に戻す。
  */
-export const DEV_SKIP_PAYWALL = __DEV__ && true;
+export const DEV_SKIP_PAYWALL = __DEV__ && false;
