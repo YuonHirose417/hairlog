@@ -1,11 +1,10 @@
 import * as WebBrowser from 'expo-web-browser';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Alert } from 'react-native';
 
 import { Card } from '@/components/ui/card';
 import { Divider } from '@/components/ui/divider';
-import { Text } from '@/components/ui/text';
+import { ListRow } from '@/components/ui/list-row';
 import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
-import { spacing } from '@/constants/theme';
 
 /**
  * アプリ内ブラウザで開く。Safari へ飛ばさないのは、購入画面の上から開いても
@@ -25,18 +24,9 @@ function openLegal(url: string) {
   });
 }
 
-function LegalRow({ label, url }: { label: string; url: string }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => openLegal(url)}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <Text variant="body">{label}</Text>
-      <Text variant="caption" color="textMuted">
-        {url.length === 0 ? '準備中' : '↗'}
-      </Text>
-    </Pressable>
-  );
+/** URL が入るまでは「準備中」、入ったら開けることを示す */
+function marker(url: string): string {
+  return url.length === 0 ? '準備中' : '↗';
 }
 
 /**
@@ -50,19 +40,13 @@ function LegalRow({ label, url }: { label: string; url: string }) {
 export function LegalLinks() {
   return (
     <Card flat>
-      <LegalRow label="利用規約" url={TERMS_URL} />
+      <ListRow label="利用規約" value={marker(TERMS_URL)} onPress={() => openLegal(TERMS_URL)} />
       <Divider />
-      <LegalRow label="プライバシーポリシー" url={PRIVACY_URL} />
+      <ListRow
+        label="プライバシーポリシー"
+        value={marker(PRIVACY_URL)}
+        onPress={() => openLegal(PRIVACY_URL)}
+      />
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  pressed: { opacity: 0.6 },
-});

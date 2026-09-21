@@ -8,6 +8,7 @@ export { EmptyState, type EmptyStateProps } from './empty-state';
 export { Fab, type FabProps } from './fab';
 export { IconButton, type IconButtonProps } from './icon-button';
 export { LegalLinks } from './legal-links';
+export { ListRow, type ListRowProps } from './list-row';
 export { MEMO_PLACEHOLDER, MemoField, type MemoFieldProps } from './memo-field';
 export { PhotoCountBadge, type PhotoCountBadgeProps } from './photo-count-badge';
 export { PhotoFrame, type PhotoFrameProps } from './photo-frame';

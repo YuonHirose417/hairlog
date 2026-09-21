@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Card, LegalLinks, Section, Text } from '@/components/ui';
+import { Button, Card, LegalLinks, ListRow, Section, Text } from '@/components/ui';
 import { DEV_SKIP_PAYWALL } from '@/constants/dev';
 import { FREE_VISIT_LIMIT, spacing } from '@/constants/theme';
 import { useEntitlement } from '@/hooks/use-entitlement';
@@ -265,12 +265,7 @@ export function Settings() {
           <LegalLinks />
 
           <Card flat style={styles.action}>
-            <View style={styles.row}>
-              <Text variant="body">バージョン</Text>
-              <Text variant="caption" color="textMuted">
-                {Constants.expoConfig?.version ?? '—'}
-              </Text>
-            </View>
+            <ListRow label="バージョン" value={Constants.expoConfig?.version ?? '—'} />
           </Card>
         </Section>
 
@@ -309,12 +304,6 @@ const styles = StyleSheet.create({
   },
   action: {
     marginTop: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
   },
   dangerZone: {
     paddingHorizontal: spacing.md,

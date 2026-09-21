@@ -259,6 +259,26 @@ export const typography = {
 
 export type TypographyVariant = keyof typeof typography;
 
+/**
+ * 行の中で「上下中央に見える」ようにするための補正（px）。
+ *
+ * M PLUS Rounded 1c は ascent（ベースラインより上）が descent より大きく、iOS では
+ * lineHeight の余りが文字の**上側**に入る。そのため数値上は中央でも字が下に寄る。
+ * この値ぶん translateY で持ち上げる。**レイアウトは動かさない。**
+ *
+ * 字が大きいほどずれも大きいので variant ごとに持つ。実機で見て合わなければ
+ * **ここだけ**直すこと。画面に数値を書かない。
+ */
+export const opticalCenterOffset: Record<TypographyVariant, number> = {
+  caption: 1,
+  body: 2,
+  subhead: 2,
+  title: 3,
+  logo: 3,
+  display: 3,
+  showcaseMemo: 3,
+};
+
 // -----------------------------------------------------------------------------
 // モーション
 // -----------------------------------------------------------------------------
