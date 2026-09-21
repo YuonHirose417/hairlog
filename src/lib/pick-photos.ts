@@ -146,7 +146,9 @@ async function pickFromLibrary(): Promise<PickPhotosResult> {
 
 /**
  * 選択肢を出して写真を取り込む。
- * キャンセル・「あとで」のときは uris が空の結果を返す（null ではない）。
+ * キャンセルされたときは uris が空の結果を返す（null ではない）。
+ *
+ * **必ず解決する。** 呼び出し側は解決を前提に連打ガードを戻してよい。
  */
 export async function pickPhotos(): Promise<PickPhotosResult> {
   try {
