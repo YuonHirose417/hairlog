@@ -24,9 +24,12 @@ function openLegal(url: string) {
   });
 }
 
-/** URL が入るまでは「準備中」、入ったら開けることを示す */
-function marker(url: string): string {
-  return url.length === 0 ? '準備中' : '↗';
+/**
+ * URL が未設定のときだけ「準備中」を出す。
+ * 設定済みなら、開けることは行の右端の山形が示すので値は要らない。
+ */
+function marker(url: string): string | undefined {
+  return url.length === 0 ? '準備中' : undefined;
 }
 
 /**
