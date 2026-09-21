@@ -264,7 +264,7 @@ export function Settings() {
           {/* 購入画面と同じ部品を使う。文面を2箇所に散らさない */}
           <LegalLinks />
 
-          <Card flat style={styles.action}>
+          <Card flat rows style={styles.action}>
             <ListRow label="バージョン" value={Constants.expoConfig?.version ?? '—'} />
           </Card>
         </Section>

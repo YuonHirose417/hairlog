@@ -42,7 +42,7 @@ function marker(url: string): string | undefined {
  */
 export function LegalLinks() {
   return (
-    <Card flat>
+    <Card flat rows>
       <ListRow label="利用規約" value={marker(TERMS_URL)} onPress={() => openLegal(TERMS_URL)} />
       <Divider />
       <ListRow
