@@ -260,23 +260,60 @@ export const typography = {
 export type TypographyVariant = keyof typeof typography;
 
 /**
- * 行の中で「上下中央に見える」ようにするための補正（px）。
+ * M PLUS Rounded 1c の実測メトリクス（TTF の hhea / unitsPerEm 1000）。
+ * 3ウェイトとも同じ値だった。
  *
- * M PLUS Rounded 1c は ascent（ベースラインより上）が descent より大きく、iOS では
- * lineHeight の余りが文字の**上側**に入る。そのため数値上は中央でも字が下に寄る。
- * この値ぶん translateY で持ち上げる。**レイアウトは動かさない。**
- *
- * 字が大きいほどずれも大きいので variant ごとに持つ。実機で見て合わなければ
- * **ここだけ**直すこと。画面に数値を書かない。
+ * OS/2 の USE_TYPO_METRICS が false なので、iOS は typo ではなく **hhea** を使う。
+ * ascent が descent の 3.36 倍という強い非対称で、これが「字が下に寄る」原因。
  */
+const FONT_ASCENT = 1.075;
+const FONT_DESCENT = 0.32;
+/**
+ * このフォントは sCapHeight を宣言していない（OS/2 v1）ため、一般的な比率を使う。
+ * **ここだけが推定値。** 実機でまだずれて見えるなら、まずこの数字を疑う。
+ * 動かすと全 variant の補正が連動する。
+ */
+const FONT_CAP_HEIGHT = 0.72;
+
+/**
+ * 行の中で「上下中央に見える」ようにするための補正（px）。正なら字が下寄り。
+ *
+ * iOS は lineHeight（L）を指定すると行の高さを L に固定し、**余りを上側に入れる**。
+ * ベースラインは行の下端から descent ぶん上に来るので:
+ *
+ *   ベースライン位置 = L − descent × fontSize
+ *   字の見た目の中心 = ベースライン位置 − (capHeight × fontSize) / 2
+ *   ずれ             = 字の見た目の中心 − L / 2
+ *
+ * Text の opticalCenter がこのぶんを translateY で打ち消す。
+ *
+ * **丸めない。** iOS は 3x 描画なので 0.33px 刻みに意味があり、丸めると
+ * body の 1.48 が 1 になって 0.5px ぶん取りこぼす。
+ *
+ * lineHeight が自然な行の高さ（FONT_ASCENT + FONT_DESCENT = 1.395 em）より小さい
+ * logo / display は符号が逆に出る（字が上寄りになる）。式のまま任せてよい。
+ */
+function centerOffsetOf(variant: TypographyVariant): number {
+  const { fontSize: size, lineHeight: box } = typography[variant];
+
+  // lineHeight を指定しなければこの高さになる
+  const naturalHeight = (FONT_ASCENT + FONT_DESCENT) * size;
+  // 余りはすべて文字の**上側**に入る。ここが下寄りになる理由
+  const leadingAbove = box - naturalHeight;
+
+  const baselineFromTop = leadingAbove + FONT_ASCENT * size;
+  const glyphCenter = baselineFromTop - (FONT_CAP_HEIGHT * size) / 2;
+  return glyphCenter - box / 2;
+}
+
 export const opticalCenterOffset: Record<TypographyVariant, number> = {
-  caption: 1,
-  body: 2,
-  subhead: 2,
-  title: 3,
-  logo: 3,
-  display: 3,
-  showcaseMemo: 3,
+  caption: centerOffsetOf('caption'),
+  body: centerOffsetOf('body'),
+  subhead: centerOffsetOf('subhead'),
+  title: centerOffsetOf('title'),
+  logo: centerOffsetOf('logo'),
+  display: centerOffsetOf('display'),
+  showcaseMemo: centerOffsetOf('showcaseMemo'),
 };
 
 // -----------------------------------------------------------------------------
