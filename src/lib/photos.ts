@@ -41,10 +41,6 @@ export function resolvePhotoUri(relativeUri: string): string {
   return new File(Paths.document, relativeUri).uri;
 }
 
-/** ファイルの実体が残っているか。書き出しや表示前の確認に使う */
-export function photoExists(relativeUri: string): boolean {
-  return new File(Paths.document, relativeUri).exists;
-}
 
 /** 元ファイルの拡張子を引き継ぐ。取れなければ jpg にする */
 function extensionOf(sourceUri: string): string {

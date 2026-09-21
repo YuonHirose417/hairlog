@@ -40,10 +40,6 @@ function readKey(): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** キーが .env に入っているか。SDK には触れないので、いつ呼んでも安全 */
-export function isPurchasesConfigured(): boolean {
-  return readKey() !== null;
-}
 
 /**
  * configure() で読み込んだ SDK を保持する。以降の呼び出しで import をやり直さない。
@@ -56,7 +52,7 @@ let initPromise: Promise<PurchasesStatus> | null = null;
 
 /**
  * 初期化を1度だけ行い、結果を返す。
- * アプリ起動時（_layout）に呼び、以降は getPurchasesStatus() で参照する。
+ * アプリ起動時（_layout）に呼ぶ。2回目以降はキャッシュ済みの Promise を返す。
  */
 export function initPurchases(): Promise<PurchasesStatus> {
   if (!initPromise) {
@@ -68,10 +64,6 @@ export function initPurchases(): Promise<PurchasesStatus> {
   return initPromise;
 }
 
-/** initPurchases() が終わるまでは null。UI の出し分けに使う */
-export function getPurchasesStatus(): PurchasesStatus | null {
-  return status;
-}
 
 async function configure(): Promise<PurchasesStatus> {
   // iOS 用のキーしか持たないため、それ以外では初期化しない

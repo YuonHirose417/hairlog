@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { initDatabase } from '@/lib/db';
+import { cleanUpExportFiles } from '@/lib/export';
 import { REMINDER_KIND } from '@/lib/notifications';
 import { initPurchases } from '@/lib/purchases';
 
@@ -64,32 +65,30 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    // 前回までの書き出しの残りを片付ける。失敗しても起動は止めない
+    cleanUpExportFiles();
+  }, []);
+
+  useEffect(() => {
     /**
      * 撮影リマインドの通知をタップしたら記録追加を開く。
      * ここでは**受け取って保持するだけ**。遷移は下の効果が条件を見て行う。
      */
-    function receive(response: Notifications.NotificationResponse | null, source: string) {
+    function receive(response: Notifications.NotificationResponse | null) {
       const data = response?.notification.request.content.data;
       if (!data || data.kind !== REMINDER_KIND) return;
 
       const date = typeof data.appointmentAt === 'string' ? data.appointmentAt : undefined;
-      console.log('[hairlog][通知] 受け取り', {
-        経由: source,
-        予約日時: date,
-        id: response?.notification.request.identifier,
-      });
       setPending({ date });
     }
 
     // アプリが終了していたときのタップ。これが無いと通知から起動した初回だけ反応しない
     Notifications.getLastNotificationResponseAsync()
-      .then((response) => receive(response, '起動時'))
+      .then(receive)
       .catch(() => {});
 
     // 起動中・背面のときのタップ
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) =>
-      receive(response, '起動中')
-    );
+    const subscription = Notifications.addNotificationResponseReceivedListener(receive);
     return () => subscription.remove();
   }, []);
 
@@ -114,15 +113,7 @@ export default function RootLayout() {
     if (!pending || handled.current === pending) return;
 
     // ready だけでは足りない。Stack が実際にマウントされたかを見る
-    if (!ready || !navigationReady) {
-      console.log('[hairlog][通知] 保留中', { ready, navigationReady });
-      return;
-    }
-
-    console.log('[hairlog][通知] 遷移を実行', {
-      日付: pending.date,
-      時刻: new Date().toLocaleTimeString(),
-    });
+    if (!ready || !navigationReady) return;
 
     handled.current = pending;
     router.push({ pathname: '/add', params: pending.date ? { date: pending.date } : {} });

@@ -62,6 +62,9 @@ function exportFileName(): string {
  */
 export async function shareRecords(): Promise<ShareResult> {
   try {
+    // 前回までの書き出しを先に片付ける。キャッシュに常に1つだけ置く状態を保つ
+    cleanUpExportFiles();
+
     const payload = await exportAll();
     if (payload.visits.length === 0) return { ok: false, reason: 'empty' };
 
@@ -198,7 +201,15 @@ export async function savePhotosToLibrary(
 // 掃除
 // -----------------------------------------------------------------------------
 
-/** 共有用に作った古い JSON を片付ける。キャッシュなので OS も消すが、念のため */
+/**
+ * 共有用に作った古い JSON を片付ける。
+ *
+ * ファイル名に日付が入るので、日をまたぐと前回のぶんが残る。キャッシュ領域なので
+ * OS もいずれ消すが、溜めないよう**アプリ起動時**と**書き出しの直前**に呼ぶ。
+ *
+ * **Sharing.shareAsync() の直後には呼ばない。** シートが閉じた時点で解決するが、
+ * 受け取り側のアプリがまだ読んでいることがあり、そこで消すと書き出しが壊れうる。
+ */
 export function cleanUpExportFiles(): void {
   try {
     for (const entry of new Directory(Paths.cache).list()) {

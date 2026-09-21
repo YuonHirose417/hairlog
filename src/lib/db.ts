@@ -108,13 +108,6 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
   await db.execAsync(`PRAGMA user_version = ${version};`);
 }
 
-/** テストやリセット用。通常の画面からは呼ばない */
-export async function closeDatabase(): Promise<void> {
-  if (!databasePromise) return;
-  const db = await databasePromise;
-  databasePromise = null;
-  await db.closeAsync();
-}
 
 // -----------------------------------------------------------------------------
 // 行 → ドメイン型の変換
@@ -336,7 +329,7 @@ export async function deleteVisit(id: string): Promise<void> {
 }
 
 /**
- * すべての記録を削除する。開発中のリセット用。
+ * すべての記録を削除する。設定画面の「すべてのデータを削除」から呼ぶ。
  *
  * photos 行は ON DELETE CASCADE で消えるが **ファイルの実体は残る**。
  * 呼び出し側で lib/photos.ts の removeOrphanedPhotos() を続けて呼ぶこと。
@@ -578,35 +571,6 @@ export async function markReminderCancelled(id: string): Promise<void> {
   await db.runAsync('UPDATE photo_reminders SET cancelled_at = ? WHERE id = ?;', [now(), id]);
 }
 
-export async function deleteReminder(id: string): Promise<void> {
-  const db = await initDatabase();
-  await db.runAsync('DELETE FROM photo_reminders WHERE id = ?;', [id]);
-}
-
-/**
- * 指定した「日」に予約されている未キャンセルのリマインドを返す。
- * 記録を保存したときに、その日の残り通知を取り消すために使う。
- *
- * @param isoDate ISO8601 の日時文字列。日付部分だけを見る
- */
-export async function findRemindersOn(isoDate: string): Promise<PhotoReminder[]> {
-  const db = await initDatabase();
-  // ⚠ この関数は **UTC の日付**で比較する。appointment_at は toISOString() で
-  // 保存されるため、日本時間（UTC+9）では 09:00 より前の予約が前日扱いになり、
-  // 朝いちの美容院を取りこぼす。
-  // リマインドのキャンセルには使わないこと。lib/notifications.ts の
-  // cancelRemindersForDate() がローカルの日付キーで突き合わせる。
-  const day = isoDate.slice(0, 10);
-
-  const rows = await db.getAllAsync<ReminderRow>(
-    `SELECT * FROM photo_reminders
-      WHERE cancelled_at IS NULL
-        AND substr(appointment_at, 1, 10) = ?
-      ORDER BY appointment_at ASC;`,
-    [day]
-  );
-  return rows.map(mapReminder);
-}
 
 // -----------------------------------------------------------------------------
 // 書き出し

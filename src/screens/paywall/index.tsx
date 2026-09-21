@@ -39,11 +39,11 @@ export function Paywall({ from = 'settings' }: PaywallProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { available, unavailableLabel, purchase, restore } = useEntitlement();
-  const { offer, loading: offerLoading } = useProOffer();
+  const { available, unavailableLabel, purchase, restore, refresh } = useEntitlement();
+  const { offer, loading: offerLoading, reload: reloadOffer } = useProOffer();
 
   /** 走っている操作。1本で持つことで二重押しを防ぐ */
-  const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
+  const [busy, setBusy] = useState<'purchase' | 'restore' | 'retry' | null>(null);
   /** 購入完了の表示に切り替わったか */
   const [done, setDone] = useState(false);
 
@@ -123,6 +123,24 @@ export function Paywall({ from = 'settings' }: PaywallProps) {
       '購入が見つかりませんでした',
       'ご購入時と同じ Apple ID でサインインしているかご確認ください。'
     );
+  }
+
+  /**
+   * 課金の準備をやり直す。
+   *
+   * 購入状態と表示価格の**両方**を取り直す。片方だけだと、ロックは外れたのに
+   * 価格が空のままになる。
+   */
+  async function handleRetry() {
+    if (busy) return;
+    setBusy('retry');
+
+    try {
+      await refresh();
+      await reloadOffer();
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (done) {
@@ -211,11 +229,27 @@ export function Paywall({ from = 'settings' }: PaywallProps) {
 
         {locked ? (
           <Card flat style={styles.locked}>
-            <Text variant="body">いまは購入できません</Text>
+            <Text variant="body">購入の準備ができませんでした</Text>
             <Text variant="caption" color="textMuted" style={styles.benefitNote}>
-              課金は{unavailableLabel ?? '確認中…'}です。実機の development build
-              でお試しください。
+              通信状態を確認して、しばらくしてからもう一度お試しください。
             </Text>
+
+            <Button
+              label="もう一度試す"
+              variant="secondary"
+              fullWidth
+              disabled={busy !== null}
+              loading={busy === 'retry'}
+              onPress={() => void handleRetry()}
+              style={styles.retry}
+            />
+
+            {/* 技術的な理由は開発ビルドだけ。利用者には意味が分からないため */}
+            {__DEV__ ? (
+              <Text variant="caption" color="textMuted" style={styles.benefitNote}>
+                開発用: 課金は{unavailableLabel ?? '確認中…'}
+              </Text>
+            ) : null}
           </Card>
         ) : null}
 
@@ -282,6 +316,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   locked: {
+    marginTop: spacing.md,
+  },
+  retry: {
     marginTop: spacing.md,
   },
   legal: {

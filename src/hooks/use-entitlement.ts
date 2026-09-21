@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   describePurchasesStatus,
@@ -133,6 +133,8 @@ export type UseProOfferResult = {
   /** 表示価格。取得できなければ null */
   offer: ProOffer | null;
   loading: boolean;
+  /** 取り直す。課金が後から使えるようになったときに呼ぶ */
+  reload: () => Promise<void>;
 };
 
 /**
@@ -144,20 +146,32 @@ export function useProOffer(): UseProOfferResult {
   const [loading, setLoading] = useState(true);
   const alive = useRef(true);
 
+  /**
+   * 取得して反映する。**同期的な setState を持たない**ので効果からも呼べる
+   *（先頭で setLoading すると react-hooks/set-state-in-effect に触れる）。
+   */
+  const apply = useCallback(async () => {
+    const result = await fetchProOffer();
+    // 取得を待っている間に画面が閉じられることがある
+    if (!alive.current) return;
+    setOffer(result);
+    setLoading(false);
+  }, []);
+
+  // 押されたときだけ、取り直していることを見せる
+  const reload = useCallback(async () => {
+    setLoading(true);
+    await apply();
+  }, [apply]);
+
   useEffect(() => {
     alive.current = true;
-
-    fetchProOffer().then((result) => {
-      // 取得を待っている間に画面が閉じられることがある
-      if (!alive.current) return;
-      setOffer(result);
-      setLoading(false);
-    });
+    void apply();
 
     return () => {
       alive.current = false;
     };
-  }, []);
+  }, [apply]);
 
-  return { offer, loading };
+  return { offer, loading, reload };
 }

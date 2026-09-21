@@ -34,8 +34,8 @@ const BODY = '次に美容院へ行くとき、美容師さんに見せられま
 /** 通知の data に入れる種別。タップを受けたときの判別に使う */
 export const REMINDER_KIND = 'photo-reminder';
 
-// アプリを開いている間も通知を出す。開いていると出ないと、
-// 実機で動作を確認するときに届いていないのか出ていないのか分からなくなる
+// 記録を促すため、アプリを開いている間も通知を出す。
+// 開いていても「今日の髪型を撮りましょう」と思い出してもらうのが目的
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -56,7 +56,7 @@ Notifications.setNotificationHandler({
  * 日本時間（UTC+9）では 09:00 より前の予約が前日扱いになる。朝いちの美容院を
  * 登録したときに、その日の記録と突き合わせられなくなる。
  */
-export function localDateKey(value: Date | string): string {
+function localDateKey(value: Date | string): string {
   const date = typeof value === 'string' ? new Date(value) : value;
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -167,10 +167,12 @@ export async function scheduleTestNotification(): Promise<boolean> {
 /**
  * 許可の状態と、いま予約されている通知をログに出す。
  *
- * **__DEV__ に限定しない。** 実機で起きた問題を後から追えるようにしておきたい。
- * 出すのは件数と時刻だけで、写真やメモの中身は含まない。
+ * **開発ビルドでのみ動く。** 通知は発火まで時間が空くので、予約できているかを
+ * その場で確かめる手段が要る。本番では何も出さない。
  */
-export async function logNotificationDiagnostics(label: string): Promise<void> {
+async function logNotificationDiagnostics(label: string): Promise<void> {
+  if (!__DEV__) return;
+
   const tag = '[hairlog][通知]';
   try {
     const permission = await Notifications.getPermissionsAsync();
@@ -222,8 +224,9 @@ export async function cancelReminder(): Promise<void> {
 /**
  * その日の記録が保存されたので、残りの通知を消す。
  *
- * **db.findRemindersOn() は使わない。** あれは UTC の日付で比較するため、
- * 朝いちの予約を取りこぼす（localDateKey のコメント参照）。
+ * **突き合わせはローカルの日付キー（localDateKey）で行う。** ISO 文字列の
+ * 先頭10文字は UTC の日付なので、日本時間では 09:00 より前の予約が前日扱いに
+ * なり、朝いちの美容院を取りこぼす。
  */
 export async function cancelRemindersForDate(visitedAt: string): Promise<void> {
   const target = localDateKey(visitedAt);
