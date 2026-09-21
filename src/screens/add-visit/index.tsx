@@ -78,19 +78,36 @@ export function AddVisit({ visitId, initialDate }: AddVisitProps) {
    */
   const [original, setOriginal] = useState<string | null>(null);
 
-  // 開いた直後に一度だけ写真の選択肢を出す。StrictMode の二重実行も防ぐ
-  const askedForPhotos = useRef(false);
+  /**
+   * 写真の取り込みが走っている間は true。連打で選択肢やカメラが二重に開くのを防ぐ。
+   *
+   * **ref と state の両方を持つ。** ref は同期的に立つので同じフレームの2回目の
+   * タップを確実に弾ける。state は「いま押せない」見た目を出すために使う
+   * （state だけだと反映が次の描画になり、取りこぼす）。
+   */
+  const picking = useRef(false);
+  const [pickingNow, setPickingNow] = useState(false);
 
   const addPhotos = useCallback(async () => {
-    const result = await pickPhotos();
-    if (result.denied) {
-      alertPermissionDenied(result.denied);
-      return;
-    }
-    if (result.uris.length === 0) return;
+    if (picking.current) return;
+    picking.current = true;
+    setPickingNow(true);
 
-    // 同じ写真を二重に足さない
-    setUris((previous) => [...previous, ...result.uris.filter((u) => !previous.includes(u))]);
+    try {
+      const result = await pickPhotos();
+      if (result.denied) {
+        alertPermissionDenied(result.denied);
+        return;
+      }
+      if (result.uris.length === 0) return;
+
+      // 同じ写真を二重に足さない
+      setUris((previous) => [...previous, ...result.uris.filter((u) => !previous.includes(u))]);
+    } finally {
+      // 途中 return でも例外でも必ず戻す。ここを通らないとタイルが押せなくなる
+      picking.current = false;
+      setPickingNow(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -130,15 +147,6 @@ export function AddVisit({ visitId, initialDate }: AddVisitProps) {
     }
     void loadDefaults();
   }, [visitId]);
-
-  useEffect(() => {
-    // 編集では写真の選択肢を自動で出さない。既に写真がある状態で開くため
-    if (editing) return;
-    if (askedForPhotos.current) return;
-    askedForPhotos.current = true;
-    // キャンセルされても画面は閉じない。メモだけの記録も書けるようにするため
-    void addPhotos();
-  }, [addPhotos, editing]);
 
   // 写真は必須。メモ・美容院名・担当者名は任意
   const hasPhotos = uris.length > 0;
@@ -259,6 +267,7 @@ export function AddVisit({ visitId, initialDate }: AddVisitProps) {
             onReorder={setUris}
             onRemove={(index) => setUris((previous) => previous.filter((_, i) => i !== index))}
             onAdd={() => void addPhotos()}
+            busy={pickingNow}
           />
         </Section>
 

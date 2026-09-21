@@ -1,6 +1,9 @@
 /**
  * 写真の取り込み。撮影とカメラロールの選択肢をまとめて出す。
  *
+ * **画面を開いた直後に自動で呼ばないこと。** 表示アニメーションの最中に出した
+ * アクションシートは iOS に破棄される。利用者がタイルを押してから呼ぶ。
+ *
  * ここが返すのは **ImagePicker が返した一時的な URI**（キャッシュ領域）。
  * アプリ内への保存は、記録を保存するタイミングで lib/photos.ts の savePhoto()
  * が行う。選んだあとキャンセルされても孤立ファイルが残らないようにするため。
@@ -23,34 +26,77 @@ export type PickPhotosResult = {
 
 type Source = 'camera' | 'library' | 'cancel';
 
-/** 撮影を先に提示する。「あとで」を選べば写真なしで記録を書ける */
+/**
+ * 3択のシートに答えが返ってこないまま、これだけ経ったら cancel 扱いにする。
+ *
+ * iOS の ActionSheetIOS は、シートが表示されずに破棄されるとコールバックが
+ * **一度も呼ばれない**。その場合 Promise が永久に解決せず、呼び出し側の
+ * 連打ガードが戻らなくなってタイルが押せなくなる。それを防ぐための番人。
+ *
+ * 3択の即断なので通常は到達しない。仮に到達しても once() により遅れて届いた
+ * タップは無視されるだけで、タイルをもう一度押せばやり直せる。
+ *
+ * **カメラとカメラロールには付けない。** 撮影や選択は何分かかってもおかしくなく、
+ * 時間切れで打ち切ると利用者の操作を奪うため。
+ */
+const SOURCE_TIMEOUT = 60_000;
+
+/**
+ * resolve を1回だけ通す。遅れて届いたコールバックで状態が壊れないようにする。
+ */
+function once<T>(resolve: (value: T) => void): (value: T) => void {
+  let done = false;
+  return (value: T) => {
+    if (done) return;
+    done = true;
+    resolve(value);
+  };
+}
+
+/**
+ * 撮影とカメラロールのどちらから取り込むかを聞く。
+ *
+ * **必ず解決する。** 答えが返らなければ SOURCE_TIMEOUT で cancel になる。
+ */
 function askSource(): Promise<Source> {
-  return new Promise((resolve) => {
+  return new Promise((resolveRaw) => {
+    const resolve = once(resolveRaw);
+    const timer = setTimeout(() => resolve('cancel'), SOURCE_TIMEOUT);
+    const answer = (source: Source) => {
+      clearTimeout(timer);
+      resolve(source);
+    };
+
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['写真を撮る', 'カメラロールから選ぶ', 'あとで'],
+          options: ['写真を撮る', 'カメラロールから選ぶ', 'キャンセル'],
           cancelButtonIndex: 2,
-          title: '今日の髪型を記録しましょう',
+          title: '写真を追加',
         },
         (index) => {
-          resolve(index === 0 ? 'camera' : index === 1 ? 'library' : 'cancel');
+          answer(index === 0 ? 'camera' : index === 1 ? 'library' : 'cancel');
         }
       );
       return;
     }
 
-    Alert.alert('今日の髪型を記録しましょう', undefined, [
-      { text: '写真を撮る', onPress: () => resolve('camera') },
-      { text: 'カメラロールから選ぶ', onPress: () => resolve('library') },
-      { text: 'あとで', style: 'cancel', onPress: () => resolve('cancel') },
+    Alert.alert('写真を追加', undefined, [
+      { text: '写真を撮る', onPress: () => answer('camera') },
+      { text: 'カメラロールから選ぶ', onPress: () => answer('library') },
+      { text: 'キャンセル', style: 'cancel', onPress: () => answer('cancel') },
     ]);
   });
 }
 
-/** 1枚撮るごとに続けるか聞く。launchCameraAsync が複数撮影に対応しないため */
+/**
+ * 1枚撮るごとに続けるか聞く。launchCameraAsync が複数撮影に対応しないため。
+ *
+ * ここは撮影の直後に必ず表示されるので番人は要らないが、二重解決だけは防ぐ。
+ */
 function askAnotherShot(): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise((resolveRaw) => {
+    const resolve = once(resolveRaw);
     Alert.alert('続けて撮りますか？', '正面・横・後ろを続けて撮れます。', [
       { text: 'これで終わり', style: 'cancel', onPress: () => resolve(false) },
       { text: 'もう1枚撮る', onPress: () => resolve(true) },

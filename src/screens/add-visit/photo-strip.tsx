@@ -24,6 +24,8 @@ export type PhotoStripProps = {
   onReorder: (next: string[]) => void;
   onRemove: (index: number) => void;
   onAdd: () => void;
+  /** 写真の取り込み中。連打で二重に開かないよう、追加タイルを押せなくする */
+  busy?: boolean;
 };
 
 /**
@@ -32,10 +34,10 @@ export type PhotoStripProps = {
  * **先頭が代表写真**になり、ホームのグリッドとカードに出る。
  * 枚数が数枚の想定なので、仮想化せず ScrollView に素直に並べる。
  */
-export function PhotoStrip({ uris, onReorder, onRemove, onAdd }: PhotoStripProps) {
+export function PhotoStrip({ uris, onReorder, onRemove, onAdd, busy = false }: PhotoStripProps) {
   // 写真は必須なので、1枚も無いときは大きく出して最初に目が行くようにする
   if (uris.length === 0) {
-    return <EmptyAddTile onPress={onAdd} />;
+    return <EmptyAddTile onPress={onAdd} busy={busy} />;
   }
 
   return (
@@ -60,7 +62,7 @@ export function PhotoStrip({ uris, onReorder, onRemove, onAdd }: PhotoStripProps
         />
       ))}
 
-      <AddTile onPress={onAdd} />
+      <AddTile onPress={onAdd} busy={busy} />
     </ScrollView>
   );
 }
@@ -144,13 +146,15 @@ function PhotoTile({ uri, index, total, onRemove, onMove }: PhotoTileProps) {
 }
 
 /** 写真が1枚以上あるときの、末尾に置く小さな追加タイル */
-function AddTile({ onPress }: { onPress: () => void }) {
+function AddTile({ onPress, busy }: { onPress: () => void; busy: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="写真を追加"
+      accessibilityState={{ disabled: busy }}
+      disabled={busy}
       onPress={onPress}
-      style={({ pressed }) => pressed && styles.pressed}>
+      style={({ pressed }) => [pressed && styles.pressed, busy && styles.busy]}>
       <SolidSurface
         background="surfaceSunken"
         outline="outline"
@@ -166,13 +170,15 @@ function AddTile({ onPress }: { onPress: () => void }) {
 }
 
 /** 写真が0枚のときの、大きく目立つ追加タイル */
-function EmptyAddTile({ onPress }: { onPress: () => void }) {
+function EmptyAddTile({ onPress, busy }: { onPress: () => void; busy: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="写真を追加"
+      accessibilityState={{ disabled: busy }}
+      disabled={busy}
       onPress={onPress}
-      style={({ pressed }) => pressed && styles.pressed}>
+      style={({ pressed }) => [pressed && styles.pressed, busy && styles.busy]}>
       <SolidSurface
         background="surfaceSunken"
         outline="outline"
@@ -244,4 +250,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   pressed: { opacity: 0.6 },
+  // 黙って無反応にせず、受け付けていないことを見て分かるようにする
+  busy: { opacity: 0.4 },
 });
