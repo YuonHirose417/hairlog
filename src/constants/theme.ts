@@ -269,11 +269,15 @@ export type TypographyVariant = keyof typeof typography;
 const FONT_ASCENT = 1.075;
 const FONT_DESCENT = 0.32;
 /**
- * このフォントは sCapHeight を宣言していない（OS/2 v1）ため、一般的な比率を使う。
- * **ここだけが推定値。** 実機でまだずれて見えるなら、まずこの数字を疑う。
- * 動かすと全 variant の補正が連動する。
+ * このフォントは sCapHeight を宣言していない（OS/2 v1）ため、**実機で合わせた値**。
+ *
+ * 補正量を 0.0〜4.0 で並べた行を実機に出し、行の箱の上下の余白が等しく見える点を
+ * 選んでもらったところ body で 1.75 前後だった。そこから逆算して 0.68。
+ * 和文フォントの capHeight として妥当な範囲に収まっている。
+ *
+ * **ここだけが実測。** ずれて見えるときはこの数字を動かす。全 variant が連動する。
  */
-const FONT_CAP_HEIGHT = 0.72;
+const FONT_CAP_HEIGHT = 0.68;
 
 /**
  * 行の中で「上下中央に見える」ようにするための補正（px）。正なら字が下寄り。
