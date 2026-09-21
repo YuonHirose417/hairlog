@@ -362,6 +362,14 @@ export const layout = {
   heroMaxHeightRatio: 0.44,
   /** タップ領域の最小サイズ */
   minTouchTarget: 44,
+  /**
+   * 設定などの一覧（ListRow）の行の高さ。
+   *
+   * minTouchTarget と分けてあるのは、**ここを上げてもボタンや入力欄を太らせない**
+   * ため。minTouchTarget は他に7箇所が使っている。
+   * **44 未満にしないこと。** タップ領域の下限を割り、押しにくくなる。
+   */
+  listRowHeight: 52,
   /** 大きめのアイコンボタン。display(28px) の文字を入れても窮屈にならない */
   iconButtonLarge: 48,
   /** ＋ボタンの直径 */

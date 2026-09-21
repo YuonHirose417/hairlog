@@ -54,12 +54,12 @@ export function ListRow({ label, value, onPress }: ListRowProps) {
 
 const styles = StyleSheet.create({
   row: {
-    // 高さは minTouchTarget（44）。押せる行があるのでタップ領域の下限を満たす。
-    // 2行とも同じ部品・同じ指定なので、高さと余白は必ず一致する
-    minHeight: layout.minTouchTarget,
+    // 高さは listRowHeight。押せる行があるので 44 を下回らせないこと。
+    // どの行も同じ部品・同じ指定なので、高さと余白は必ず一致する
+    minHeight: layout.listRowHeight,
     justifyContent: 'center',
     // ラベルが折り返したときの保険。1行なら minHeight が効く
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   line: {
     flexDirection: 'row',
